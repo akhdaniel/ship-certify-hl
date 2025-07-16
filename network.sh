@@ -583,21 +583,28 @@ function createChannel() {
         fatalln "Failed to generate channel configuration"
     fi
     
-    # Set peer environment for Authority
-    setGlobalsForPeer0Authority
+    # Create genesis block for the channel
+    print_status "Creating genesis block for channel..."
+    configtxgen -profile BKIChannel -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID ${CHANNEL_NAME}
     
-    # Create channel
-    print_status "Creating channel..."
-    peer channel create -o localhost:7050 -c ${CHANNEL_NAME} \
-        --ordererTLSHostnameOverride orderer.bki.com \
-        -f ./channel-artifacts/${CHANNEL_NAME}.tx \
-        --outputBlock ./channel-artifacts/${CHANNEL_NAME}.block \
-        --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/msp/tlscacerts/tlsca.bki.com-cert.pem"
+    if [ $? -ne 0 ]; then
+        fatalln "Failed to create genesis block for channel"
+    fi
+    
+    # Use osnadmin to join channel to orderer (Fabric 2.3+ method)
+    print_status "Adding channel to orderer using channel participation API..."
+    osnadmin channel join \
+        --channelID ${CHANNEL_NAME} \
+        --config-block ./channel-artifacts/${CHANNEL_NAME}.block \
+        -o localhost:7053 \
+        --ca-file "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/msp/tlscacerts/tlsca.bki.com-cert.pem" \
+        --client-cert "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/server.crt" \
+        --client-key "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/server.key"
     
     if [ $? -eq 0 ]; then
         print_status "✅ Channel created successfully!"
     else
-        fatalln "Failed to create channel"
+        fatalln "Failed to create channel using channel participation API"
     fi
     
     # Join peers to channel
@@ -632,6 +639,12 @@ function setGlobalsForPeer0ShipOwner() {
     export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt
     export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/shipowner.bki.com/users/Admin@shipowner.bki.com/msp
     export CORE_PEER_ADDRESS=localhost:9051
+}
+
+function setGlobalsForOrderer() {
+    export CORE_PEER_TLS_ENABLED=true
+    export CORE_PEER_LOCALMSPID="OrdererMSP"
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/ordererOrganizations/bki.com/users/Admin@bki.com/msp
 }
 
 function deployCC() {
