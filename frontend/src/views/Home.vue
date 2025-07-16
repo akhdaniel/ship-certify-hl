@@ -5,7 +5,7 @@
         <n-card title="Selamat Datang" embedded>
           <template #header-extra>
             <n-icon size="24" color="#1890ff">
-              <ship-icon />
+              🚢
             </n-icon>
           </template>
           <n-text>
@@ -115,7 +115,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { vesselApi, certificateApi, surveyApi } from '@/services/api'
-import { ShipOutline as ShipIcon } from '@vicons/ionicons5'
+// import { Ship as ShipIcon } from '@vicons/ionicons5'
 
 const userStore = useUserStore()
 const loading = ref(true)

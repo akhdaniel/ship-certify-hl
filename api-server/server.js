@@ -18,6 +18,9 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Serve static files from frontend dist
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -50,27 +53,30 @@ class FabricService {
 
     async enrollAdmin() {
         try {
-            const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-            const caInfo = ccp.certificateAuthorities['ca.authority.bki.com'];
-            const caTLSCACerts = caInfo.tlsCACerts.pem;
-            const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
-
-            const enrollment = await ca.enroll({
-                enrollmentID: 'admin',
-                enrollmentSecret: 'adminpw'
-            });
-
+            // Read admin certificates from cryptogen output
+            const adminCertPath = path.resolve(__dirname, '..', 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'signcerts');
+            const adminKeyPath = path.resolve(__dirname, '..', 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'keystore');
+            
+            const certFiles = fs.readdirSync(adminCertPath);
+            const keyFiles = fs.readdirSync(adminKeyPath);
+            
+            if (certFiles.length === 0 || keyFiles.length === 0) {
+                throw new Error('Admin certificates not found. Run ./network.sh generateCerts first.');
+            }
+            
+            const certificate = fs.readFileSync(path.join(adminCertPath, certFiles[0]), 'utf8');
+            const privateKey = fs.readFileSync(path.join(adminKeyPath, keyFiles[0]), 'utf8');
+            
             const x509Identity = {
                 credentials: {
-                    certificate: enrollment.certificate,
-                    privateKey: enrollment.key.toBytes(),
+                    certificate: certificate,
+                    privateKey: privateKey,
                 },
                 mspId: 'AuthorityMSP',
                 type: 'X.509',
             };
-
             await this.wallet.put('admin', x509Identity);
-            console.log('Successfully enrolled admin user and imported to wallet');
+            console.log('Successfully imported admin user from cryptogen certificates');
         } catch (error) {
             console.error(`Failed to enroll admin user: ${error}`);
             throw error;
@@ -308,9 +314,13 @@ app.use((error, req, res, next) => {
     });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
+// SPA fallback - serve index.html for non-API routes
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+        res.status(404).json({ error: 'API route not found' });
+    } else {
+        res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
+    }
 });
 
 // Start server

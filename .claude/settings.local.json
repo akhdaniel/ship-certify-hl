@@ -4,7 +4,21 @@
       "Bash(mkdir:*)",
       "Bash(chmod:*)",
       "Bash(git commit:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(export PATH=$PWD/bin:$PATH)",
+      "Bash(export FABRIC_CFG_PATH=$PWD)",
+      "Bash(export CORE_PEER_TLS_ENABLED=true)",
+      "Bash(export CORE_PEER_LOCALMSPID=\"AuthorityMSP\")",
+      "Bash(export:*)",
+      "Bash(export CORE_PEER_ADDRESS=localhost:7051)",
+      "Bash(peer lifecycle chaincode queryinstalled:*)",
+      "Bash(peer lifecycle chaincode approveformyorg:*)",
+      "Bash(peer lifecycle chaincode commit:*)",
+      "Bash(peer lifecycle chaincode querycommitted:*)",
+      "Bash(curl:*)",
+      "Bash(open http://localhost:3000)",
+      "Bash(pkill:*)",
+      "Bash(node server.js)"
     ],
     "deny": []
   }

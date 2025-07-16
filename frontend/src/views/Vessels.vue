@@ -9,6 +9,11 @@
       >
         Daftarkan Kapal Baru
       </n-button>
+      
+      <!-- Debug info -->
+      <div style="font-size: 12px; color: #666; margin-top: 8px;">
+        Debug: Role={{ userStore.role }}, IsAuthority={{ userStore.isAuthority() }}
+      </div>
     </div>
 
     <n-space vertical size="large">

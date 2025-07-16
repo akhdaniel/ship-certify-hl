@@ -1,6 +1,7 @@
 <template>
   <n-config-provider :theme="theme">
-    <n-layout style="height: 100vh">
+    <n-message-provider>
+      <n-layout style="height: 100vh">
       <n-layout-header bordered style="height: 64px; padding: 0 24px">
         <div style="display: flex; align-items: center; justify-content: space-between; height: 100%">
           <div style="display: flex; align-items: center">
@@ -39,7 +40,8 @@
       <n-layout-content style="padding: 24px">
         <router-view />
       </n-layout-content>
-    </n-layout>
+      </n-layout>
+    </n-message-provider>
   </n-config-provider>
 </template>
 
@@ -103,6 +105,7 @@ const handleMenuUpdate = (key) => {
 }
 
 const handleRoleChange = (role) => {
+  currentRole.value = role
   userStore.setRole(role)
   // Redirect to home when role changes
   router.push('/')
@@ -116,6 +119,11 @@ watch(() => router.currentRoute.value.path, (newPath) => {
 
 // Initialize user role
 userStore.setRole(currentRole.value)
+
+// Watch for role changes and update user store
+watch(currentRole, (newRole) => {
+  userStore.setRole(newRole)
+})
 </script>
 
 <style>
