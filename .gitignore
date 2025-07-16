@@ -120,6 +120,7 @@ tls/
 *.crt
 *.key
 
-# Hyperledger Fabric binaries
+# Hyperledger Fabric binaries and samples
 bin/
 config/
+fabric-samples/
