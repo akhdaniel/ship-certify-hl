@@ -72,7 +72,7 @@ ship-certify-hl/
 
 ## Prerequisites
 
-1. **Docker & Docker Compose**
+1. **Docker & Docker Compose V2**
 2. **Node.js** (v14 atau lebih tinggi)
 3. **Hyperledger Fabric Binaries** (v2.5)
 4. **Git**
@@ -231,7 +231,7 @@ docker exec cli peer chaincode invoke -o orderer.bki.com:7050 -C bkichannel -n s
 ### Network Issues
 ```bash
 # Stop network
-docker-compose down
+docker compose down
 
 # Clean up
 docker system prune -f

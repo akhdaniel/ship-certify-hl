@@ -260,7 +260,7 @@ function networkUp() {
         createOrgs
     fi
     COMPOSE_FILES="-f docker-compose.yaml"
-    IMAGE_TAG=${IMAGETAG} docker-compose ${COMPOSE_FILES} up -d 2>&1
+    IMAGE_TAG=${IMAGETAG} docker compose ${COMPOSE_FILES} up -d 2>&1
     docker ps -a
     if [ $? -ne 0 ]; then
         fatalln "Unable to start network"

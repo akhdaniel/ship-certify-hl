@@ -32,8 +32,8 @@ check_prerequisites() {
     fi
     
     # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
-        print_error "Docker Compose is not installed"
+    if ! docker compose version &> /dev/null; then
+        print_error "Docker Compose is not installed or not accessible via 'docker compose'"
         exit 1
     fi
     
@@ -109,10 +109,10 @@ start_network() {
     export FABRIC_CFG_PATH=${PWD}/configtx
     
     # Stop any existing network
-    docker-compose down
+    docker compose down
     
     # Start the network
-    docker-compose up -d
+    docker compose up -d
     
     # Wait for containers to be ready
     print_status "Waiting for containers to be ready..."
@@ -225,7 +225,7 @@ main() {
     echo "📚 Documentation: README.md"
     echo ""
     echo "🛑 To stop the system:"
-    echo "   docker-compose down"
+    echo "   docker compose down"
     echo "   pkill -f 'npm'"
     echo ""
 }
@@ -233,7 +233,7 @@ main() {
 # Handle script interruption
 cleanup() {
     print_warning "Deployment interrupted. Cleaning up..."
-    docker-compose down
+    docker compose down
     pkill -f 'npm' 2>/dev/null
     exit 1
 }

@@ -1,4 +1,5 @@
-version: '3.7'
+# Docker Compose file for BKI Ship Certification System
+# Use: docker compose up -d
 
 services:
   orderer.bki.com:

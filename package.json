@@ -5,7 +5,7 @@
   "scripts": {
     "network:up": "./network.sh up",
     "network:down": "./network.sh down",
-    "network:clean": "docker-compose down && docker system prune -f",
+    "network:clean": "docker compose down && docker system prune -f",
     "api:install": "cd api-server && npm install",
     "api:start": "cd api-server && npm start",
     "api:dev": "cd api-server && npm run dev",
