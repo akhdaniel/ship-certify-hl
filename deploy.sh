@@ -82,9 +82,12 @@ setup_network() {
     
     # Check if Fabric binaries exist
     if [ ! -d "bin" ]; then
-        print_warning "Fabric binaries not found. Please install them first:"
-        print_warning "curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.0 1.5.0"
-        exit 1
+        print_warning "Fabric binaries not found. Installing them now..."
+        ./install-fabric.sh
+        if [ $? -ne 0 ]; then
+            print_error "Failed to install Fabric binaries"
+            exit 1
+        fi
     fi
     
     # Set PATH

@@ -87,10 +87,16 @@ cd ship-certify-hl
 
 ### 2. Install Hyperledger Fabric Binaries
 ```bash
-curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.0 1.5.0
+# Option 1: Use our installation script (recommended)
+./install-fabric.sh
+
+# Option 2: Manual installation
+curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.4 1.5.5
 export PATH=${PWD}/bin:$PATH
 export FABRIC_CFG_PATH=${PWD}/configtx
 ```
+
+**Note**: We use Fabric 2.5.4 and Fabric CA 1.5.5 for compatibility.
 
 ### 3. Setup Fabric Network
 ```bash
@@ -239,6 +245,19 @@ docker volume prune -f
 
 # Restart network
 ./network.sh up
+```
+
+### Fabric CA Version Issues
+```bash
+# If you encounter "fabric-ca-client binary is not available" error:
+# 1. Remove existing binaries
+rm -rf bin config
+
+# 2. Install with compatible versions
+./install-fabric.sh
+
+# 3. Verify installation
+./bin/fabric-ca-client version
 ```
 
 ### API Connection Issues

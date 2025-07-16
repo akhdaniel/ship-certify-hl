@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "BKI Ship Certification System on Hyperledger Fabric",
   "scripts": {
+    "install:fabric": "./install-fabric.sh",
     "network:up": "./network.sh up",
     "network:down": "./network.sh down",
     "network:clean": "docker compose down && docker system prune -f",
@@ -13,7 +14,7 @@
     "frontend:start": "cd frontend && npm run dev",
     "frontend:build": "cd frontend && npm run build",
     "chaincode:install": "cd chaincode-javascript && npm install",
-    "install:all": "npm run chaincode:install && npm run api:install && npm run frontend:install",
+    "install:all": "npm run install:fabric && npm run chaincode:install && npm run api:install && npm run frontend:install",
     "start:dev": "concurrently \"npm run api:start\" \"npm run frontend:start\"",
     "deploy": "./deploy.sh"
   },
