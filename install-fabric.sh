@@ -59,11 +59,11 @@ if [ $? -eq 0 ]; then
     
     # Set environment variables
     export PATH=${PWD}/bin:$PATH
-    export FABRIC_CFG_PATH=${PWD}/configtx
+    export FABRIC_CFG_PATH=${PWD}
     
     print_status "Environment variables set:"
     print_status "  PATH includes: ${PWD}/bin"
-    print_status "  FABRIC_CFG_PATH: ${PWD}/configtx"
+    print_status "  FABRIC_CFG_PATH: ${PWD}"
     
     # Verify installation
     print_status "Verifying installation..."
@@ -101,10 +101,10 @@ if [ $? -eq 0 ]; then
     print_status "Next steps:"
     print_status "1. Add to your shell profile:"
     print_status "   echo 'export PATH=\${PWD}/bin:\$PATH' >> ~/.bashrc"
-    print_status "   echo 'export FABRIC_CFG_PATH=\${PWD}/configtx' >> ~/.bashrc"
+    print_status "   echo 'export FABRIC_CFG_PATH=\${PWD}' >> ~/.bashrc"
     print_status "2. Or run in current session:"
     print_status "   export PATH=\${PWD}/bin:\$PATH"
-    print_status "   export FABRIC_CFG_PATH=\${PWD}/configtx"
+    print_status "   export FABRIC_CFG_PATH=\${PWD}"
     print_status "3. Start the network:"
     print_status "   ./deploy.sh"
     

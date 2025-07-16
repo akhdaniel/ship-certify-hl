@@ -92,7 +92,7 @@ setup_network() {
     
     # Set PATH
     export PATH=${PWD}/bin:$PATH
-    export FABRIC_CFG_PATH=${PWD}/configtx
+    export FABRIC_CFG_PATH=${PWD}
     
     # Generate crypto materials if not exists
     if [ ! -d "organizations/peerOrganizations" ]; then
@@ -109,7 +109,7 @@ start_network() {
     
     # Set environment variables
     export PATH=${PWD}/bin:$PATH
-    export FABRIC_CFG_PATH=${PWD}/configtx
+    export FABRIC_CFG_PATH=${PWD}
     
     # Stop any existing network
     docker compose down

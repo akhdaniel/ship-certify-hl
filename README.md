@@ -93,7 +93,7 @@ cd ship-certify-hl
 # Option 2: Manual installation
 curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.4 1.5.5
 export PATH=${PWD}/bin:$PATH
-export FABRIC_CFG_PATH=${PWD}/configtx
+export FABRIC_CFG_PATH=${PWD}
 ```
 
 **Note**: We use Fabric 2.5.4 and Fabric CA 1.5.5 for compatibility.

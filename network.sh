@@ -4,7 +4,7 @@
 # Usage: ./network.sh [up|down|createChannel|deployCC|clean]
 
 export PATH=${PWD}/bin:$PATH
-export FABRIC_CFG_PATH=${PWD}/configtx
+export FABRIC_CFG_PATH=${PWD}
 
 # Set default values
 CHANNEL_NAME="bkichannel"
@@ -575,7 +575,7 @@ function createChannel() {
     mkdir -p channel-artifacts
     
     # Generate channel configuration
-    export FABRIC_CFG_PATH=${PWD}/configtx
+    export FABRIC_CFG_PATH=${PWD}
     print_status "Generating channel configuration..."
     configtxgen -profile BKIChannel -outputCreateChannelTx ./channel-artifacts/${CHANNEL_NAME}.tx -channelID ${CHANNEL_NAME}
     
