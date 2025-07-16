@@ -1,0 +1,152 @@
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: organizations/ordererOrganizations/bki.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer.bki.com:7050
+
+  - &Authority
+    Name: AuthorityMSP
+    ID: AuthorityMSP
+    MSPDir: organizations/peerOrganizations/authority.bki.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('AuthorityMSP.admin', 'AuthorityMSP.peer', 'AuthorityMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('AuthorityMSP.admin', 'AuthorityMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('AuthorityMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('AuthorityMSP.peer')"
+
+  - &ShipOwner
+    Name: ShipOwnerMSP
+    ID: ShipOwnerMSP
+    MSPDir: organizations/peerOrganizations/shipowner.bki.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('ShipOwnerMSP.admin', 'ShipOwnerMSP.peer', 'ShipOwnerMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('ShipOwnerMSP.admin', 'ShipOwnerMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('ShipOwnerMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('ShipOwnerMSP.peer')"
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  OrdererType: etcdraft
+  Addresses:
+    - orderer.bki.com:7050
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.bki.com
+        Port: 7050
+        ClientTLSCert: organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/server.crt
+        ServerTLSCert: organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/server.crt
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  BKIOrdererGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Consortiums:
+      SampleConsortium:
+        Organizations:
+          - *Authority
+          - *ShipOwner
+
+  BKIChannel:
+    Consortium: SampleConsortium
+    <<: *ChannelDefaults
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *Authority
+        - *ShipOwner
+      Capabilities:
+        <<: *ApplicationCapabilities
