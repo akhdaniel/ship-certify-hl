@@ -150,3 +150,19 @@ Profiles:
         - *ShipOwner
       Capabilities:
         <<: *ApplicationCapabilities
+
+  BKIChannelGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *Authority
+        - *ShipOwner
+      Capabilities:
+        <<: *ApplicationCapabilities

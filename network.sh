@@ -574,41 +574,33 @@ function createChannel() {
     # Create channel artifacts directory
     mkdir -p channel-artifacts
     
-    # Generate channel configuration
+    # Generate channel genesis block using the new profile that includes orderer
     export FABRIC_CFG_PATH=${PWD}
-    print_status "Generating channel configuration..."
-    configtxgen -profile BKIChannel -outputCreateChannelTx ./channel-artifacts/${CHANNEL_NAME}.tx -channelID ${CHANNEL_NAME}
+    print_status "Generating channel genesis block..."
+    configtxgen -profile BKIChannelGenesis -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID ${CHANNEL_NAME}
     
     if [ $? -ne 0 ]; then
-        fatalln "Failed to generate channel configuration"
+        fatalln "Failed to generate channel genesis block"
     fi
     
-    # Create genesis block for the channel
-    print_status "Creating genesis block for channel..."
-    configtxgen -profile BKIChannel -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID ${CHANNEL_NAME}
-    
-    if [ $? -ne 0 ]; then
-        fatalln "Failed to create genesis block for channel"
-    fi
-    
-    # Use osnadmin to join channel to orderer (Fabric 2.3+ method)
+    # Use osnadmin to join channel to orderer (Fabric 2.3+ channel participation API)
     print_status "Adding channel to orderer using channel participation API..."
     osnadmin channel join \
         --channelID ${CHANNEL_NAME} \
         --config-block ./channel-artifacts/${CHANNEL_NAME}.block \
         -o localhost:7053 \
-        --ca-file "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/msp/tlscacerts/tlsca.bki.com-cert.pem" \
+        --ca-file "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
         --client-cert "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/server.crt" \
         --client-key "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/server.key"
     
     if [ $? -eq 0 ]; then
-        print_status "✅ Channel created successfully!"
+        print_status "✅ Channel created successfully using channel participation API!"
+        
+        # Join peers to channel
+        joinChannel
     else
         fatalln "Failed to create channel using channel participation API"
     fi
-    
-    # Join peers to channel
-    joinChannel
 }
 
 function joinChannel() {
