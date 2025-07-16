@@ -1,0 +1,38 @@
+# Crypto configuration for BKI Ship Certification Network
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: bki.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS:
+          - localhost
+          - 127.0.0.1
+          - orderer.bki.com
+
+PeerOrgs:
+  - Name: Authority
+    Domain: authority.bki.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - "{{.Hostname}}.authority.bki.com"
+    Users:
+      Count: 1
+
+  - Name: ShipOwner
+    Domain: shipowner.bki.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      Start: 0
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - "{{.Hostname}}.shipowner.bki.com"
+    Users:
+      Count: 1

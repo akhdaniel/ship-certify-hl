@@ -95,7 +95,7 @@ setup_network() {
     export FABRIC_CFG_PATH=${PWD}/configtx
     
     # Generate crypto materials if not exists
-    if [ ! -d "organizations" ]; then
+    if [ ! -d "organizations/peerOrganizations" ]; then
         print_status "Generating crypto materials..."
         ./network.sh generateCerts
     fi

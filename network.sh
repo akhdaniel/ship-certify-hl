@@ -65,6 +65,7 @@ printHelp() {
     echo "Usage: "
     echo "  network.sh <Mode> [Flags]"
     echo "    Modes:"
+    echo "      generateCerts - Generate crypto materials for organizations"
     echo "      up - Bring up the network with docker compose up"
     echo "      down - Clear the network with docker compose down"
     echo "      createChannel - Create and join a sample channel"
@@ -84,6 +85,7 @@ printHelp() {
     echo "  network.sh -h (print this message)"
     echo ""
     echo "Examples:"
+    echo "  network.sh generateCerts"
     echo "  network.sh up"
     echo "  network.sh up -ca"
     echo "  network.sh up -c mychannel -s couchdb"
@@ -385,18 +387,166 @@ function networkDown() {
     fi
 }
 
+function generateCerts() {
+    print_header "Generating crypto materials for BKI Ship Certification Network..."
+    
+    # Check if cryptogen binary exists
+    if [ ! -f "bin/cryptogen" ]; then
+        fatalln "cryptogen binary not found. Please install Fabric binaries first: ./install-fabric.sh"
+    fi
+    
+    # Clean existing crypto materials
+    if [ -d "organizations" ]; then
+        print_warning "Removing existing crypto materials..."
+        rm -rf organizations
+    fi
+    
+    # Generate crypto materials using cryptogen
+    print_status "Generating crypto materials using cryptogen..."
+    ./bin/cryptogen generate --config=./crypto-config.yaml --output="organizations"
+    
+    if [ $? -ne 0 ]; then
+        fatalln "Failed to generate crypto materials"
+    fi
+    
+    # Create additional required directories
+    mkdir -p organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com
+    mkdir -p organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com
+    mkdir -p organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com
+    
+    # Generate connection profiles
+    generateConnectionProfiles
+    
+    print_status "✅ Crypto materials generated successfully!"
+    print_status "Generated organizations:"
+    print_status "  - OrdererOrg (bki.com)"
+    print_status "  - AuthorityMSP (authority.bki.com)"
+    print_status "  - ShipOwnerMSP (shipowner.bki.com)"
+}
+
+function generateConnectionProfiles() {
+    print_status "Generating connection profiles..."
+    
+    # Authority connection profile
+    cat > organizations/peerOrganizations/authority.bki.com/connection-authority.json << EOF
+{
+    "name": "bki-network-authority",
+    "version": "1.0.0",
+    "client": {
+        "organization": "AuthorityMSP",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "AuthorityMSP": {
+            "mspid": "AuthorityMSP",
+            "peers": [
+                "peer0.authority.bki.com"
+            ],
+            "certificateAuthorities": [
+                "ca.authority.bki.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.authority.bki.com": {
+            "url": "grpcs://localhost:7051",
+            "tlsCACerts": {
+                "path": "organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.authority.bki.com",
+                "hostnameOverride": "peer0.authority.bki.com"
+            }
+        }
+    },
+    "certificateAuthorities": {
+        "ca.authority.bki.com": {
+            "url": "https://localhost:7054",
+            "caName": "ca-authority",
+            "tlsCACerts": {
+                "path": "organizations/fabric-ca/authority/tls-cert.pem"
+            },
+            "httpOptions": {
+                "verify": false
+            }
+        }
+    }
+}
+EOF
+
+    # ShipOwner connection profile
+    cat > organizations/peerOrganizations/shipowner.bki.com/connection-shipowner.json << EOF
+{
+    "name": "bki-network-shipowner",
+    "version": "1.0.0",
+    "client": {
+        "organization": "ShipOwnerMSP",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "ShipOwnerMSP": {
+            "mspid": "ShipOwnerMSP",
+            "peers": [
+                "peer0.shipowner.bki.com"
+            ],
+            "certificateAuthorities": [
+                "ca.shipowner.bki.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.shipowner.bki.com": {
+            "url": "grpcs://localhost:9051",
+            "tlsCACerts": {
+                "path": "organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.shipowner.bki.com",
+                "hostnameOverride": "peer0.shipowner.bki.com"
+            }
+        }
+    },
+    "certificateAuthorities": {
+        "ca.shipowner.bki.com": {
+            "url": "https://localhost:8054",
+            "caName": "ca-shipowner",
+            "tlsCACerts": {
+                "path": "organizations/fabric-ca/shipowner/tls-cert.pem"
+            },
+            "httpOptions": {
+                "verify": false
+            }
+        }
+    }
+}
+EOF
+
+    print_status "✅ Connection profiles generated"
+}
+
 function createOrgs() {
     print_header "Creating organizations and crypto materials..."
     
-    # This is a simplified version - in production you'd use Fabric CA
-    print_warning "Using cryptogen for development (not recommended for production)"
+    # Check if crypto materials already exist
+    if [ -d "organizations/peerOrganizations" ]; then
+        print_status "Crypto materials already exist, skipping generation"
+        return
+    fi
     
-    # Create directories
-    mkdir -p organizations/peerOrganizations/authority.bki.com
-    mkdir -p organizations/peerOrganizations/shipowner.bki.com
-    mkdir -p organizations/ordererOrganizations/bki.com
-    
-    print_status "✅ Organization crypto materials created"
+    # Generate crypto materials
+    generateCerts
 }
 
 function cleanUp() {
@@ -560,6 +710,9 @@ done
 
 # Execute based on mode
 case $MODE in
+    "generateCerts")
+        generateCerts
+        ;;
     "up")
         networkUp
         ;;
