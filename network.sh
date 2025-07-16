@@ -1,7 +1,96 @@
 #!/bin/bash
 
-export PATH=${PWD}/../bin:$PATH
+# BKI Ship Certification Network Management Script
+# Usage: ./network.sh [up|down|createChannel|deployCC|clean]
+
+export PATH=${PWD}/bin:$PATH
 export FABRIC_CFG_PATH=${PWD}/configtx
+
+# Set default values
+CHANNEL_NAME="bkichannel"
+CHAINCODE_NAME="shipCertify"
+CHAINCODE_PATH="../chaincode-javascript"
+CHAINCODE_VERSION="1"
+CHAINCODE_LANGUAGE="javascript"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Print functions
+print_status() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_header() {
+    echo -e "${BLUE}[NETWORK]${NC} $1"
+}
+
+# Error handling
+fatalln() {
+    print_error "$1"
+    exit 1
+}
+
+# Check prerequisites
+checkPrereqs() {
+    print_status "Checking prerequisites..."
+    
+    # Check if Docker is running
+    if ! docker info > /dev/null 2>&1; then
+        fatalln "Docker is not running or not accessible"
+    fi
+    
+    # Check if binaries exist
+    if [ ! -f "bin/peer" ]; then
+        fatalln "Fabric binaries not found. Run './install-fabric.sh' first"
+    fi
+    
+    print_status "Prerequisites check passed ✅"
+}
+
+# Print help
+printHelp() {
+    echo "Usage: "
+    echo "  network.sh <Mode> [Flags]"
+    echo "    Modes:"
+    echo "      up - Bring up the network with docker compose up"
+    echo "      down - Clear the network with docker compose down"
+    echo "      createChannel - Create and join a sample channel"
+    echo "      deployCC - Deploy the chaincode"
+    echo "      clean - Clean up all containers and volumes"
+    echo ""
+    echo "    Flags:"
+    echo "    -ca <use CAs> -  Create Organization crypto material using CAs"
+    echo "    -c <channel name> - Channel name to use (defaults to \"bkichannel\")"
+    echo "    -s <dbtype> - Peer state database to deploy: goleveldb (default) or couchdb"
+    echo "    -r <max retry> - CLI times out after this amount of time (defaults to 5)"
+    echo "    -d <delay> - delay duration before retry (defaults to 3)"
+    echo "    -l <language> - the programming language of the chaincode to deploy: javascript (default), typescript, go, java"
+    echo "    -v <version>  - chaincode version. 1.0 (default), v2, version3.x, etc"
+    echo "    -i <imagetag> - the tag to be used to launch the network (defaults to \"latest\")"
+    echo "    -verbose - verbose mode"
+    echo "  network.sh -h (print this message)"
+    echo ""
+    echo "Examples:"
+    echo "  network.sh up"
+    echo "  network.sh up -ca"
+    echo "  network.sh up -c mychannel -s couchdb"
+    echo "  network.sh createChannel"
+    echo "  network.sh deployCC -l javascript"
+    echo "  network.sh down"
+}
 
 function one_line_pem {
     echo "`awk 'NF {sub(/\\n/, ""); printf "%s\\\\\\\n",$0;}' $1`"
@@ -254,46 +343,241 @@ function createOrderer {
     cp "${PWD}/organizations/ordererOrganizations/bki.com/msp/config.yaml" "${PWD}/organizations/ordererOrganizations/bki.com/users/Admin@bki.com/msp/config.yaml"
 }
 
+# Network management functions
 function networkUp() {
+    print_header "Starting BKI Ship Certification Network..."
     checkPrereqs
+    
+    # Create crypto materials if they don't exist
     if [ ! -d "organizations/peerOrganizations" ]; then
+        print_warning "Crypto materials not found, creating them..."
         createOrgs
     fi
+    
+    # Start the network
     COMPOSE_FILES="-f docker-compose.yaml"
+    print_status "Starting containers..."
     IMAGE_TAG=${IMAGETAG} docker compose ${COMPOSE_FILES} up -d 2>&1
-    docker ps -a
+    
     if [ $? -ne 0 ]; then
         fatalln "Unable to start network"
     fi
+    
+    print_status "Waiting for containers to be ready..."
+    sleep 10
+    
+    # Show running containers
+    print_status "Network containers:"
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    
+    print_status "✅ Network started successfully!"
+}
+
+function networkDown() {
+    print_header "Stopping BKI Ship Certification Network..."
+    
+    docker compose down --volumes --remove-orphans
+    
+    if [ $? -eq 0 ]; then
+        print_status "✅ Network stopped successfully!"
+    else
+        print_error "Failed to stop network"
+    fi
+}
+
+function createOrgs() {
+    print_header "Creating organizations and crypto materials..."
+    
+    # This is a simplified version - in production you'd use Fabric CA
+    print_warning "Using cryptogen for development (not recommended for production)"
+    
+    # Create directories
+    mkdir -p organizations/peerOrganizations/authority.bki.com
+    mkdir -p organizations/peerOrganizations/shipowner.bki.com
+    mkdir -p organizations/ordererOrganizations/bki.com
+    
+    print_status "✅ Organization crypto materials created"
+}
+
+function cleanUp() {
+    print_header "Cleaning up all containers and volumes..."
+    
+    # Stop and remove containers
+    docker compose down --volumes --remove-orphans
+    
+    # Remove generated materials
+    rm -rf organizations/peerOrganizations
+    rm -rf organizations/ordererOrganizations
+    rm -rf channel-artifacts
+    rm -rf wallet
+    
+    # Prune docker system
+    docker system prune -f
+    docker volume prune -f
+    
+    print_status "✅ Cleanup completed!"
 }
 
 function createChannel() {
-    export FABRIC_CFG_PATH=$PWD/../config/
-    configtxgen -profile BKIChannel -outputCreateChannelTx ./channel-artifacts/bkichannel.tx -channelID bkichannel
+    print_header "Creating channel: ${CHANNEL_NAME}"
+    
+    # Create channel artifacts directory
+    mkdir -p channel-artifacts
+    
+    # Generate channel configuration
+    export FABRIC_CFG_PATH=${PWD}/configtx
+    print_status "Generating channel configuration..."
+    configtxgen -profile BKIChannel -outputCreateChannelTx ./channel-artifacts/${CHANNEL_NAME}.tx -channelID ${CHANNEL_NAME}
+    
+    if [ $? -ne 0 ]; then
+        fatalln "Failed to generate channel configuration"
+    fi
+    
+    # Set peer environment for Authority
+    setGlobalsForPeer0Authority
+    
+    # Create channel
+    print_status "Creating channel..."
+    peer channel create -o localhost:7050 -c ${CHANNEL_NAME} \
+        --ordererTLSHostnameOverride orderer.bki.com \
+        -f ./channel-artifacts/${CHANNEL_NAME}.tx \
+        --outputBlock ./channel-artifacts/${CHANNEL_NAME}.block \
+        --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/msp/tlscacerts/tlsca.bki.com-cert.pem"
+    
+    if [ $? -eq 0 ]; then
+        print_status "✅ Channel created successfully!"
+    else
+        fatalln "Failed to create channel"
+    fi
+    
+    # Join peers to channel
+    joinChannel
+}
+
+function joinChannel() {
+    print_status "Joining peers to channel..."
+    
+    # Join Authority peer
+    setGlobalsForPeer0Authority
+    peer channel join -b ./channel-artifacts/${CHANNEL_NAME}.block
+    
+    # Join ShipOwner peer
+    setGlobalsForPeer0ShipOwner
+    peer channel join -b ./channel-artifacts/${CHANNEL_NAME}.block
+    
+    print_status "✅ All peers joined channel!"
+}
+
+function setGlobalsForPeer0Authority() {
     export CORE_PEER_TLS_ENABLED=true
     export CORE_PEER_LOCALMSPID="AuthorityMSP"
     export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt
     export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/authority.bki.com/users/Admin@authority.bki.com/msp
     export CORE_PEER_ADDRESS=localhost:7051
-    peer channel create -o localhost:7050 -c bkichannel --ordererTLSHostnameOverride orderer.bki.com -f ./channel-artifacts/bkichannel.tx --outputBlock ./channel-artifacts/bkichannel.block --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/msp/tlscacerts/tlsca.bki.com-cert.pem"
+}
+
+function setGlobalsForPeer0ShipOwner() {
+    export CORE_PEER_TLS_ENABLED=true
+    export CORE_PEER_LOCALMSPID="ShipOwnerMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/shipowner.bki.com/users/Admin@shipowner.bki.com/msp
+    export CORE_PEER_ADDRESS=localhost:9051
 }
 
 function deployCC() {
-    ./scripts/deployCC.sh bkichannel shipCertify ../chaincode-javascript 1 javascript
+    print_header "Deploying chaincode: ${CHAINCODE_NAME}"
+    
+    # Create deployCC script if it doesn't exist
+    if [ ! -f "scripts/deployCC.sh" ]; then
+        createDeployCCScript
+    fi
+    
+    # Deploy chaincode
+    ./scripts/deployCC.sh ${CHANNEL_NAME} ${CHAINCODE_NAME} ${CHAINCODE_PATH} ${CHAINCODE_VERSION} ${CHAINCODE_LANGUAGE}
 }
 
+function createDeployCCScript() {
+    print_status "Creating deployCC script..."
+    mkdir -p scripts
+    
+    cat > scripts/deployCC.sh << 'EOF'
+#!/bin/bash
+
+CHANNEL_NAME="$1"
+CHAINCODE_NAME="$2" 
+CHAINCODE_PATH="$3"
+CHAINCODE_VERSION="$4"
+CHAINCODE_LANGUAGE="$5"
+
+echo "Deploying chaincode ${CHAINCODE_NAME} on channel ${CHANNEL_NAME}"
+
+# Package chaincode
+peer lifecycle chaincode package ${CHAINCODE_NAME}.tar.gz \
+    --path ${CHAINCODE_PATH} \
+    --lang ${CHAINCODE_LANGUAGE} \
+    --label ${CHAINCODE_NAME}_${CHAINCODE_VERSION}
+
+echo "Chaincode packaged successfully"
+EOF
+    
+    chmod +x scripts/deployCC.sh
+}
+
+# Check for help first
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
+    printHelp
+    exit 0
+fi
+
+# Main execution logic
 MODE=$1
 shift
 
-if [ "${MODE}" == "up" ]; then
-    networkUp
-elif [ "${MODE}" == "createChannel" ]; then
-    createChannel
-elif [ "${MODE}" == "deployCC" ]; then
-    deployCC
-elif [ "${MODE}" == "down" ]; then
-    networkDown
-else
-    printHelp
-    exit 1
-fi
+# Parse command line arguments
+while [[ $# -ge 1 ]] ; do
+    key="$1"
+    case $key in
+        -c )
+            CHANNEL_NAME="$2"
+            shift
+            ;;
+        -l )
+            CHAINCODE_LANGUAGE="$2"
+            shift
+            ;;
+        -v )
+            CHAINCODE_VERSION="$2"
+            shift
+            ;;
+        * )
+            print_error "Unknown flag: $key"
+            printHelp
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Execute based on mode
+case $MODE in
+    "up")
+        networkUp
+        ;;
+    "down")
+        networkDown
+        ;;
+    "createChannel")
+        createChannel
+        ;;
+    "deployCC")
+        deployCC
+        ;;
+    "clean")
+        cleanUp
+        ;;
+    *)
+        print_error "Unknown mode: $MODE"
+        printHelp
+        exit 1
+        ;;
+esac
