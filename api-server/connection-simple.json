@@ -23,7 +23,7 @@
         "peer0.authority.bki.com": {
             "url": "grpcs://localhost:7051",
             "tlsCACerts": {
-                "path": "/Users/daniel/data/ship-certify-hl/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt"
+                "path": "../organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt"
             },
             "grpcOptions": {
                 "ssl-target-name-override": "peer0.authority.bki.com",
