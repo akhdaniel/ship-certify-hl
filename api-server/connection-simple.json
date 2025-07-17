@@ -1,0 +1,34 @@
+{
+    "name": "bki-network-simple",
+    "version": "1.0.0",
+    "client": {
+        "organization": "AuthorityMSP",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "AuthorityMSP": {
+            "mspid": "AuthorityMSP",
+            "peers": [
+                "peer0.authority.bki.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.authority.bki.com": {
+            "url": "grpcs://localhost:7051",
+            "tlsCACerts": {
+                "path": "/Users/daniel/data/ship-certify-hl/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.authority.bki.com",
+                "hostnameOverride": "peer0.authority.bki.com"
+            }
+        }
+    }
+}

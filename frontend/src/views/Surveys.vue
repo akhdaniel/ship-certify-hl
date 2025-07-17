@@ -78,7 +78,7 @@
 
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
-import { NButton, NTag, useMessage } from 'naive-ui'
+import { NButton, NTag, NDatePicker, useMessage } from 'naive-ui'
 import { useUserStore } from '@/stores/user'
 import { surveyApi, vesselApi } from '@/services/api'
 import { SearchOutline as SearchIcon } from '@vicons/ionicons5'
@@ -258,13 +258,36 @@ const handleAddSurvey = async () => {
     await formRef.value?.validate()
     submitting.value = true
     
+    console.log('Creating survey:', newSurvey.value)
     await surveyApi.create(newSurvey.value)
     
     message.success('Survey berhasil dijadwalkan')
     showAddModal.value = false
     resetForm()
+    
+    // Show loading state and wait for blockchain processing
+    console.log('Waiting for blockchain to process...')
+    loading.value = true
+    message.loading('Memperbarui data...', { duration: 0, key: 'refresh' })
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    console.log('Refreshing surveys list...')
+    const originalCount = surveys.value.length
     await loadSurveys()
+    
+    if (surveys.value.length === originalCount) {
+      console.log('Record not yet available, retrying in 2 seconds...')
+      message.loading('Menunggu data terbaru...', { duration: 0, key: 'refresh' })
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await loadSurveys()
+    }
+    
+    // Clear loading messages
+    message.destroyAll()
+    loading.value = false
+    console.log('Surveys list refreshed')
   } catch (error) {
+    console.error('Error creating survey:', error)
     message.error('Gagal menjadwalkan survey: ' + error.message)
   } finally {
     submitting.value = false
@@ -273,10 +296,25 @@ const handleAddSurvey = async () => {
 
 const startSurvey = async (surveyId) => {
   try {
+    console.log('Starting survey:', surveyId)
     await surveyApi.start(surveyId)
     message.success('Survey berhasil dimulai')
+    
+    // Show loading state and wait for blockchain processing
+    console.log('Waiting for blockchain to process...')
+    loading.value = true
+    message.loading('Memperbarui data...', { duration: 0, key: 'refresh' })
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    console.log('Refreshing surveys list...')
     await loadSurveys()
+    
+    // Clear loading messages
+    message.destroyAll()
+    loading.value = false
+    console.log('Surveys list refreshed')
   } catch (error) {
+    console.error('Error starting survey:', error)
     message.error('Gagal memulai survey: ' + error.message)
   }
 }

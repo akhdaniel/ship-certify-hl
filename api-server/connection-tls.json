@@ -1,0 +1,88 @@
+{
+    "name": "bki-network-tls",
+    "version": "1.0.0",
+    "client": {
+        "organization": "AuthorityMSP",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                },
+                "orderer": "300"
+            }
+        }
+    },
+    "channels": {
+        "bkichannel": {
+            "orderers": [
+                "orderer.bki.com"
+            ],
+            "peers": {
+                "peer0.authority.bki.com": {
+                    "endorsingPeer": true,
+                    "chaincodeQuery": true,
+                    "ledgerQuery": true,
+                    "eventSource": true
+                },
+                "peer0.shipowner.bki.com": {
+                    "endorsingPeer": true,
+                    "chaincodeQuery": false,
+                    "ledgerQuery": false,
+                    "eventSource": false
+                }
+            },
+            "discovery": {
+                "enabled": true,
+                "asLocalhost": false
+            }
+        }
+    },
+    "orderers": {
+        "orderer.bki.com": {
+            "url": "grpcs://orderer.bki.com:7050",
+            "tlsCACerts": {
+                "path": "organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "orderer.bki.com",
+                "hostnameOverride": "orderer.bki.com"
+            }
+        }
+    },
+    "organizations": {
+        "AuthorityMSP": {
+            "mspid": "AuthorityMSP",
+            "peers": [
+                "peer0.authority.bki.com"
+            ]
+        },
+        "ShipOwnerMSP": {
+            "mspid": "ShipOwnerMSP",
+            "peers": [
+                "peer0.shipowner.bki.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.authority.bki.com": {
+            "url": "grpcs://peer0.authority.bki.com:7051",
+            "tlsCACerts": {
+                "path": "organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.authority.bki.com",
+                "hostnameOverride": "peer0.authority.bki.com"
+            }
+        },
+        "peer0.shipowner.bki.com": {
+            "url": "grpcs://peer0.shipowner.bki.com:9051",
+            "tlsCACerts": {
+                "path": "organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.shipowner.bki.com",
+                "hostnameOverride": "peer0.shipowner.bki.com"
+            }
+        }
+    }
+}

@@ -150,6 +150,25 @@ services:
     networks:
       - bki
 
+  api-server:
+    container_name: api-server
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./organizations:/app/organizations
+      - ./frontend/dist:/app/frontend/dist
+    depends_on:
+      - peer0.authority.bki.com
+      - peer0.shipowner.bki.com
+      - orderer.bki.com
+    networks:
+      - bki
+
 volumes:
   orderer.bki.com:
   peer0.authority.bki.com:

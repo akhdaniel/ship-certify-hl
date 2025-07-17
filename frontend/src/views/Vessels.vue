@@ -251,13 +251,36 @@ const handleAddVessel = async () => {
     await formRef.value?.validate()
     submitting.value = true
     
+    console.log('Creating vessel:', newVessel.value)
     await vesselApi.create(newVessel.value)
     
     message.success('Kapal berhasil didaftarkan')
     showAddModal.value = false
     resetForm()
+    
+    // Show loading state and wait for blockchain processing
+    console.log('Waiting for blockchain to process...')
+    loading.value = true
+    message.loading('Memperbarui data...', { duration: 0, key: 'refresh' })
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    console.log('Refreshing vessels list...')
+    const originalCount = vessels.value.length
     await loadVessels()
+    
+    if (vessels.value.length === originalCount) {
+      console.log('Record not yet available, retrying in 2 seconds...')
+      message.loading('Menunggu data terbaru...', { duration: 0, key: 'refresh' })
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await loadVessels()
+    }
+    
+    // Clear loading messages
+    message.destroyAll()
+    loading.value = false
+    console.log('Vessels list refreshed')
   } catch (error) {
+    console.error('Error creating vessel:', error)
     message.error('Gagal mendaftarkan kapal: ' + error.message)
   } finally {
     submitting.value = false

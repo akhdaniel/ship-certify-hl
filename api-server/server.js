@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Serve static files from frontend dist
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
+app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -29,7 +29,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Fabric network configuration
-const ccpPath = path.resolve(__dirname, '..', 'organizations', 'peerOrganizations', 'authority.bki.com', 'connection-authority.json');
+const ccpPath = path.resolve(__dirname, 'connection-tls.json');
 const walletPath = path.join(process.cwd(), 'wallet');
 const channelName = 'bkichannel';
 const chaincodeName = 'shipCertify';
@@ -87,11 +87,16 @@ class FabricService {
         try {
             const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
             
+            console.log('Using connection profile with absolute paths');
+            
             this.gateway = new Gateway();
             await this.gateway.connect(ccp, {
                 wallet: this.wallet,
                 identity: userId,
-                discovery: { enabled: true, asLocalhost: true }
+                discovery: { enabled: false, asLocalhost: true },
+                eventHandlerOptions: {
+                    strategy: null
+                }
             });
 
             const network = await this.gateway.getNetwork(channelName);
@@ -112,20 +117,73 @@ class FabricService {
 
     async submitTransaction(functionName, ...args) {
         try {
+            console.log(`Submitting transaction: ${functionName} with args:`, args);
+            
+            // Use default contract submission
             const result = await this.contract.submitTransaction(functionName, ...args);
+            console.log(`Transaction result:`, result.toString());
             return JSON.parse(result.toString());
         } catch (error) {
             console.error(`Failed to submit transaction: ${error}`);
+            console.error(`Transaction details:`, {
+                functionName,
+                args,
+                error: error.message,
+                responses: error.responses || [],
+                errors: error.errors || []
+            });
+            
+            // Log more detailed error information
+            if (error.responses && error.responses.length > 0) {
+                console.error(`Peer responses:`, error.responses.map(r => ({
+                    status: r.response?.status,
+                    message: r.response?.message,
+                    peer: r.peer
+                })));
+            }
+            
+            if (error.errors && error.errors.length > 0) {
+                console.error(`Peer errors:`, error.errors.map(e => ({
+                    message: e.message,
+                    peer: e.peer
+                })));
+            }
+            
             throw error;
         }
     }
 
     async evaluateTransaction(functionName, ...args) {
         try {
+            console.log(`Evaluating transaction: ${functionName} with args:`, args);
             const result = await this.contract.evaluateTransaction(functionName, ...args);
-            return JSON.parse(result.toString());
+            console.log(`Raw result length: ${result.length}, content:`, result.toString());
+            
+            const resultString = result.toString();
+            if (!resultString || resultString.trim() === '') {
+                console.log('Empty result, returning empty array');
+                return [];
+            }
+            
+            try {
+                const parsed = JSON.parse(resultString);
+                console.log('Successfully parsed result:', parsed);
+                return parsed;
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                console.error('Attempting to parse:', resultString);
+                return [];
+            }
         } catch (error) {
-            console.error(`Failed to evaluate transaction: ${error}`);
+            console.error(`Failed to evaluate transaction ${functionName}:`, error);
+            console.error(`Error details:`, error.details || error.message);
+            
+            // If it's a query that should return an empty array on failure
+            if (functionName.startsWith('queryAll')) {
+                console.log('Query failed, returning empty array for queryAll function');
+                return [];
+            }
+            
             throw error;
         }
     }
@@ -319,7 +377,7 @@ app.get('*', (req, res) => {
     if (req.path.startsWith('/api/')) {
         res.status(404).json({ error: 'API route not found' });
     } else {
-        res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
+        res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
     }
 });
 

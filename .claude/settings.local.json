@@ -18,7 +18,14 @@
       "Bash(curl:*)",
       "Bash(open http://localhost:3000)",
       "Bash(pkill:*)",
-      "Bash(node server.js)"
+      "Bash(node server.js)",
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "Bash(npm start)",
+      "Bash(node:*)",
+      "Bash(docker compose restart:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run preview:*)"
     ],
     "deny": []
   }
