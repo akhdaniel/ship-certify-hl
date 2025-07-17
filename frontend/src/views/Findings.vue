@@ -9,9 +9,8 @@
       </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 24px;">
       <div>
-        <n-card title="Filter Survey">
+        <n-card title="Filter Survey" >
           <n-select
           v-model:value="selectedSurveyId"
           :options="surveyOptions"
@@ -41,7 +40,6 @@
         :pagination="pagination"
       />
       </div>
-    </div>
 
     <!-- Add Finding Modal -->
     <n-modal v-model:show="showAddModal" preset="dialog" title="Tambah Finding">
@@ -702,6 +700,15 @@ onMounted(() => {
   border-radius: 1rem !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .n-card,
+html[data-theme="dark"] .n-card,
+body[data-theme="dark"] .n-card {
+  background: linear-gradient(145deg, #232946 0%, #1a1a2e 100%) !important;
+  border-radius: 1rem !important;
+  border: 1px solid rgba(124, 58, 237, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08) !important;
 }
 
 /* =================================================================== */

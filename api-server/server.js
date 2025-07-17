@@ -8,6 +8,10 @@ const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const USERS_FILE = path.join(__dirname, 'users.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -253,6 +257,82 @@ const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
+// Helper: Load users from file
+function loadUsers() {
+  if (!fs.existsSync(USERS_FILE)) return [];
+  return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+}
+
+// Helper: Find user by username/email
+function findUser(username) {
+  const users = loadUsers();
+  return users.find(u => u.username === username || u.email === username);
+}
+
+// JWT Auth Middleware
+function authMiddleware(req, res, next) {
+  // Allow /api/login and /health
+  if (
+    req.path === '/api/login' ||
+    req.path === '/health' ||
+    (req.method === 'GET' && (
+      req.path.startsWith('/api/vessels') ||
+      req.path.startsWith('/api/certificates') ||
+      req.path.startsWith('/api/shipowners')
+    ))
+  ) {
+    return next();
+  }
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).json({ error: 'Missing token' });
+  }
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = payload;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
+
+// Role-based access control middleware
+function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.user || req.user.role !== role) {
+      return res.status(403).json({ error: 'Forbidden: insufficient role' });
+    }
+    next();
+  };
+}
+
+app.use(authMiddleware);
+
+// ===================== Auth Routes =====================
+
+app.post('/api/login', asyncHandler(async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+  const user = findUser(username);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  // Issue JWT
+  const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+  res.json({
+    success: true,
+    token,
+    user: { id: user.id, username: user.username, role: user.role, name: user.name }
+  });
+}));
+
 // ===================== API Routes =====================
 
 // Health check
@@ -262,7 +342,7 @@ app.get('/health', (req, res) => {
 
 // ===================== Authority Routes =====================
 
-app.post('/api/authorities', asyncHandler(async (req, res) => {
+app.post('/api/authorities', requireRole('authority'), asyncHandler(async (req, res) => {
     const { authorityId, address, name } = req.body;
     
     if (!authorityId || !address || !name) {
@@ -273,7 +353,7 @@ app.post('/api/authorities', asyncHandler(async (req, res) => {
     res.json({ success: true, data: result });
 }));
 
-app.post('/api/shipowners', asyncHandler(async (req, res) => {
+app.post('/api/shipowners', requireRole('authority'), asyncHandler(async (req, res) => {
     const { shipOwnerId, address, name, companyName } = req.body;
     
     if (!shipOwnerId || !address || !name || !companyName) {
@@ -291,7 +371,7 @@ app.get('/api/shipowners', asyncHandler(async (req, res) => {
 
 // ===================== Vessel Routes =====================
 
-app.post('/api/vessels', asyncHandler(async (req, res) => {
+app.post('/api/vessels', requireRole('authority'), asyncHandler(async (req, res) => {
     const { vesselId, name, type, imoNumber, flag, buildYear, shipOwnerId } = req.body;
     
     if (!vesselId || !name || !type || !imoNumber || !flag || !buildYear || !shipOwnerId) {
@@ -315,7 +395,7 @@ app.get('/api/vessels/:vesselId', asyncHandler(async (req, res) => {
 
 // ===================== Survey Routes =====================
 
-app.post('/api/surveys', asyncHandler(async (req, res) => {
+app.post('/api/surveys', requireRole('authority'), asyncHandler(async (req, res) => {
     const { surveyId, vesselId, surveyType, scheduledDate, surveyorName } = req.body;
     
     if (!surveyId || !vesselId || !surveyType || !scheduledDate || !surveyorName) {
@@ -326,7 +406,7 @@ app.post('/api/surveys', asyncHandler(async (req, res) => {
     res.json({ success: true, data: result });
 }));
 
-app.put('/api/surveys/:surveyId/start', asyncHandler(async (req, res) => {
+app.put('/api/surveys/:surveyId/start', requireRole('authority'), asyncHandler(async (req, res) => {
     const { surveyId } = req.params;
     const result = await fabricService.submitTransaction('startSurvey', surveyId);
     res.json({ success: true, data: result });
@@ -379,7 +459,7 @@ app.get('/api/surveys/:surveyId/findings', asyncHandler(async (req, res) => {
 
 // ===================== Certificate Routes =====================
 
-app.post('/api/certificates', asyncHandler(async (req, res) => {
+app.post('/api/certificates', requireRole('authority'), asyncHandler(async (req, res) => {
     const { certificateId, vesselId, surveyId, certificateType, validFrom, validTo } = req.body;
     
     if (!certificateId || !vesselId || !surveyId || !certificateType || !validFrom || !validTo) {

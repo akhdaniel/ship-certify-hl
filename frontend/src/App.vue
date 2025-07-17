@@ -73,14 +73,15 @@
               </div>
               <div class="header-right" v-if="!isMobile">
                 <n-select
+                  v-if="!userStore.isLoggedIn() && !isTablet"
                   v-model:value="currentRole"
                   :options="roleOptions"
-                    :style="{ width: isCompact ? '150px' : '200px', paddingLeft: '8px', paddingRight: '8px' }"
+                  :style="{ width: isCompact ? '150px' : '200px', paddingLeft: '8px', paddingRight: '8px' }"
                   @update:value="handleRoleChange"
                   class="role-select"
                   size="small"
-                  v-if="!isTablet"
                 />
+                <n-button v-if="userStore.isLoggedIn()" @click="handleLogout" size="small" style="margin-right: 12px;">Logout</n-button>
                 <n-switch
                   v-model:value="isDark"
                   @update:value="toggleTheme"
@@ -229,6 +230,11 @@ const handleRoleChange = (role) => {
   // Redirect to home when role changes
   router.push('/')
   activeKey.value = '/'
+}
+
+const handleLogout = () => {
+  userStore.logout()
+  router.push('/login')
 }
 
 // Lifecycle hooks
@@ -655,7 +661,7 @@ html[data-theme="dark"] {
 .content-wrapper {
   position: relative;
   z-index: 1;
-  padding: 2rem 0;
+  padding: 0;
   min-height: calc(100vh - 72px - 4rem);
 }
 

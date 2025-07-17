@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useUserStore } from '@/stores/user'
 
 const api = axios.create({
   baseURL: '/api',
@@ -8,6 +9,14 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Attach JWT token if available
+    try {
+      const userStore = useUserStore()
+      if (userStore.isLoggedIn() && userStore.token) {
+        config.headers = config.headers || {}
+        config.headers['Authorization'] = `Bearer ${userStore.token}`
+      }
+    } catch (e) {}
     return config
   },
   (error) => {

@@ -12,6 +12,7 @@ import Findings from './views/Findings.vue'
 import Certificates from './views/Certificates.vue'
 import ShipOwners from './views/ShipOwners.vue'
 import Authority from './views/Authority.vue'
+import Login from './views/Login.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -21,11 +22,23 @@ const routes = [
   { path: '/certificates', name: 'Certificates', component: Certificates },
   { path: '/shipowners', name: 'ShipOwners', component: ShipOwners },
   { path: '/authority', name: 'Authority', component: Authority },
+  { path: '/login', name: 'Login', component: Login }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// Add navigation guard for auth
+import { useUserStore } from './stores/user'
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  const publicPages = ['/', '/login']
+  if (!userStore.isLoggedIn() && !publicPages.includes(to.path)) {
+    return next('/login')
+  }
+  next()
 })
 
 const app = createApp(App)
