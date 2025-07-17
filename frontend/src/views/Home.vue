@@ -86,62 +86,63 @@
         <div class="authority-icon">⚓</div>
         <n-h2 class="authority-title">Panel BKI Authority</n-h2>
       </div>
-      
-      <div class="authority-grid">
-        <div class="authority-box vessels-box" @click="$router.push('/vessels')">
-          <div class="authority-box-icon">🚢</div>
-          <div class="authority-box-content">
-            <div class="authority-box-label">Kapal Terdaftar</div>
-            <div class="authority-box-value">{{ statistics.totalVessels }}</div>
-            <div class="authority-box-action">Kelola Kapal →</div>
+      <div class="authority-content">
+        <div class="authority-grid">
+          <div class="authority-box vessels-box" @click="$router.push('/vessels')">
+            <div class="authority-box-icon">🚢</div>
+            <div class="authority-box-content">
+              <div class="authority-box-label">Kapal Terdaftar</div>
+              <div class="authority-box-value">{{ statistics.totalVessels }}</div>
+              <div class="authority-box-action">Kelola Kapal →</div>
+            </div>
           </div>
-        </div>
 
-        <div class="authority-box surveys-box" @click="$router.push('/surveys')">
-          <div class="authority-box-icon">🔍</div>
-          <div class="authority-box-content">
-            <div class="authority-box-label">Survey Aktif</div>
-            <div class="authority-box-value">{{ statistics.activeSurveys }}</div>
-            <div class="authority-box-action">Kelola Survey →</div>
+          <div class="authority-box surveys-box" @click="$router.push('/surveys')">
+            <div class="authority-box-icon">🔍</div>
+            <div class="authority-box-content">
+              <div class="authority-box-label">Survey Aktif</div>
+              <div class="authority-box-value">{{ statistics.activeSurveys }}</div>
+              <div class="authority-box-action">Kelola Survey →</div>
+            </div>
           </div>
-        </div>
 
-        <div class="authority-box findings-box" @click="$router.push('/findings')">
-          <div class="authority-box-icon">⚠️</div>
-          <div class="authority-box-content">
-            <div class="authority-box-label">Findings Terbuka</div>
-            <div class="authority-box-value">{{ statistics.openFindings }}</div>
-            <div class="authority-box-action">Kelola Findings →</div>
+          <div class="authority-box findings-box" @click="$router.push('/findings')">
+            <div class="authority-box-icon">⚠️</div>
+            <div class="authority-box-content">
+              <div class="authority-box-label">Findings Terbuka</div>
+              <div class="authority-box-value">{{ statistics.openFindings }}</div>
+              <div class="authority-box-action">Kelola Findings →</div>
+            </div>
           </div>
-        </div>
 
-        <div class="authority-box certificates-box" @click="$router.push('/certificates')">
-          <div class="authority-box-icon">📜</div>
-          <div class="authority-box-content">
-            <div class="authority-box-label">Sertifikat Dikeluarkan</div>
-            <div class="authority-box-value">{{ statistics.issuedCertificates }}</div>
-            <div class="authority-box-action">Kelola Sertifikat →</div>
+          <div class="authority-box certificates-box" @click="$router.push('/certificates')">
+            <div class="authority-box-icon">📜</div>
+            <div class="authority-box-content">
+              <div class="authority-box-label">Sertifikat Dikeluarkan</div>
+              <div class="authority-box-value">{{ statistics.issuedCertificates }}</div>
+              <div class="authority-box-action">Kelola Sertifikat →</div>
+            </div>
           </div>
-        </div>
 
-        <div class="authority-box shipowners-box" @click="$router.push('/shipowners')">
-          <div class="authority-box-icon">👥</div>
-          <div class="authority-box-content">
-            <div class="authority-box-label">Ship Owners</div>
-            <div class="authority-box-value">{{ Math.floor(statistics.totalVessels * 0.6) }}</div>
-            <div class="authority-box-action">Kelola Ship Owners →</div>
+          <div class="authority-box shipowners-box" @click="$router.push('/shipowners')">
+            <div class="authority-box-icon">👥</div>
+            <div class="authority-box-content">
+              <div class="authority-box-label">Ship Owners</div>
+              <div class="authority-box-value">{{ Math.floor(statistics.totalVessels * 0.6) }}</div>
+              <div class="authority-box-action">Kelola Ship Owners →</div>
+            </div>
           </div>
-        </div>
 
-        <div class="authority-box authority-admin-box" @click="$router.push('/authority')">
-          <div class="authority-box-icon">🏛️</div>
-          <div class="authority-box-content">
-            <div class="authority-box-label">Authority Admin</div>
-            <div class="authority-box-value">✓</div>
-            <div class="authority-box-action">Pengaturan Admin →</div>
+          <div class="authority-box authority-admin-box" @click="$router.push('/authority')">
+            <div class="authority-box-icon">🏛️</div>
+            <div class="authority-box-content">
+              <div class="authority-box-label">Authority Admin</div>
+              <div class="authority-box-value">✓</div>
+              <div class="authority-box-action">Pengaturan Admin →</div>
+            </div>
           </div>
         </div>
-      </div>
+      </div>        
     </div>
 
     <div v-else-if="userStore.isShipOwner()">
@@ -487,16 +488,13 @@ onMounted(() => {
 /* Authority Panel Styles */
 .authority-panel {
   margin: 2rem 0;
-}
-
-.panel-header {
-  margin-bottom: 1.5rem;
+  padding: 1.5rem;
   border-radius: 1rem;
   position: relative;
   overflow: hidden;
 }
 
-.panel-header::before {
+.authority-panel::before {
   content: '';
   position: absolute;
   top: 0;
@@ -507,16 +505,17 @@ onMounted(() => {
   animation: shimmer 3s infinite;
 }
 
-.panel-title {
+.authority-header {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem;
+  margin-bottom: 2rem;
+  width: 100%;
 }
 
-.panel-icon {
+.authority-icon {
   font-size: 2.5rem;
   background: var(--gradient-primary);
   background-clip: text;
@@ -535,179 +534,216 @@ onMounted(() => {
   font-weight: 700;
 }
 
-/* Authority Buttons Row */
-.authority-buttons-row {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  padding: 0 1rem;
+.authority-content {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  clear: both;
 }
 
-.authority-btn {
-  flex: 1;
-  min-width: 200px;
-  max-width: 280px;
-  height: 120px !important;
-  border-radius: 1rem !important;
-  border: none !important;
-  padding: 1.5rem !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+.authority-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.authority-box {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
-.authority-btn:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+.authority-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
 }
 
-.authority-btn::before {
+.authority-box::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
+  width: 4px;
+  height: 100%;
+  transition: width 0.3s ease;
 }
 
-.authority-btn:hover::before {
-  opacity: 0.1;
+.authority-box:hover::before {
+  width: 8px;
 }
 
-/* Individual button gradients */
-.vessels-btn {
-  background: var(--gradient-ocean) !important;
-  color: white !important;
-}
-
-.vessels-btn::before {
-  background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), transparent);
-}
-
-.surveys-btn {
-  background: var(--gradient-success) !important;
-  color: white !important;
-}
-
-.surveys-btn::before {
-  background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), transparent);
-}
-
-.findings-btn {
-  background: var(--gradient-warning) !important;
-  color: white !important;
-}
-
-.findings-btn::before {
-  background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), transparent);
-}
-
-.certificates-btn {
-  background: var(--gradient-secondary) !important;
-  color: white !important;
-}
-
-.certificates-btn::before {
-  background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), transparent);
-}
-
-.btn-icon {
+.authority-box-icon {
   font-size: 2rem;
-  margin-bottom: 0.5rem;
-  position: relative;
-  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
-.btn-content {
-  text-align: center;
-  position: relative;
-  z-index: 2;
+.authority-box-content {
+  flex: 1;
+  min-width: 0;
 }
 
-.btn-label {
+.authority-box-label {
   font-size: 0.875rem;
+  color: #64748b;
   font-weight: 500;
-  opacity: 0.9;
   margin-bottom: 0.25rem;
 }
 
-.btn-value {
-  font-size: 1.5rem;
+.authority-box-value {
+  font-size: 1.75rem;
   font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
 }
 
-/* Responsive Design */
+.authority-box-action {
+  font-size: 0.75rem;
+  color: #667eea;
+  font-weight: 600;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.authority-box:hover .authority-box-action {
+  opacity: 1;
+}
+
+/* Individual authority box colors */
+.vessels-box::before {
+  background: var(--gradient-ocean);
+}
+
+.vessels-box .authority-box-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%);
+  color: white;
+}
+
+.surveys-box::before {
+  background: var(--gradient-success);
+}
+
+.surveys-box .authority-box-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%);
+  color: white;
+}
+
+.findings-box::before {
+  background: var(--gradient-warning);
+}
+
+.findings-box .authority-box-icon {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 50%);
+  color: white;
+}
+
+.certificates-box::before {
+  background: var(--gradient-secondary);
+}
+
+.certificates-box .authority-box-icon {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%);
+  color: white;
+}
+
+.shipowners-box::before {
+  background: var(--gradient-marine);
+}
+
+.shipowners-box .authority-box-icon {
+  background: linear-gradient(135deg, #209cff 0%, #68e0cf 50%);
+  color: white;
+}
+
+.authority-admin-box::before {
+  background: var(--gradient-dark);
+}
+
+.authority-admin-box .authority-box-icon {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%);
+  color: white;
+}
+
+/* Responsive Design for Authority Panel */
 @media (max-width: 1024px) {
-  .authority-buttons-row {
-    display: grid;
+  .authority-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
   }
   
-  .authority-btn {
-    min-width: unset;
-    max-width: unset;
+  .authority-panel {
+    padding: 1rem;
+  }
+  
+  .authority-header {
+    margin-bottom: 1rem;
   }
 }
 
 @media (max-width: 768px) {
-  .authority-buttons-row {
+  .authority-grid {
     grid-template-columns: 1fr;
   }
   
-  .authority-btn {
-    height: 100px !important;
-    padding: 1rem !important;
+  .authority-box {
+    padding: 1rem;
   }
   
-  .btn-icon {
+  .authority-box-icon {
+    width: 48px;
+    height: 48px;
     font-size: 1.5rem;
   }
   
-  .btn-value {
-    font-size: 1.25rem;
+  .authority-box-value {
+    font-size: 1.5rem;
   }
   
-  .panel-title {
+  .authority-header {
     flex-direction: column;
     text-align: center;
-    padding: 1rem;
   }
   
   .authority-title {
     font-size: 1.5rem;
   }
   
-  .panel-icon {
+  .authority-icon {
     font-size: 2rem;
   }
 }
 
 @media (max-width: 480px) {
-  .authority-buttons-row {
-    padding: 0 0.5rem;
+  .authority-box {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
   }
   
-  .authority-btn {
-    height: 90px !important;
+  .authority-box-content {
+    width: 100%;
   }
   
-  .btn-label {
-    font-size: 0.75rem;
-  }
-  
-  .btn-value {
-    font-size: 1.125rem;
+  .authority-box-icon {
+    align-self: center;
   }
 }
 

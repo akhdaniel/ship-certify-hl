@@ -25,7 +25,14 @@
       "Bash(node:*)",
       "Bash(docker compose restart:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run preview:*)"
+      "Bash(npm run preview:*)",
+      "Bash(true)",
+      "Bash(lsof:*)",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(npm run:*)",
+      "Bash(cd:*)",
+      "Bash(find:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
