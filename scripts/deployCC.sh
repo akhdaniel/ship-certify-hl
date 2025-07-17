@@ -10,7 +10,7 @@ echo "Deploying chaincode ${CHAINCODE_NAME} on channel ${CHANNEL_NAME}"
 
 # Set path - stay in ship-certify-hl directory
 export PATH=${PWD}/../bin:$PATH
-export FABRIC_CFG_PATH=${PWD}/..
+# export FABRIC_CFG_PATH=${PWD}/..
 
 # Function to set globals for Authority peer
 setGlobalsForPeer0Authority() {
