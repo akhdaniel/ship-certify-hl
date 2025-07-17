@@ -15,10 +15,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -511,9 +517,9 @@ const startServer = async () => {
     try {
         await initializeFabric();
         
-        app.listen(PORT, () => {
-            console.log(`🚀 BKI Ship Certification API Server running on port ${PORT}`);
-            console.log(`📚 API Documentation available at http://localhost:${PORT}/health`);
+        app.listen(PORT, HOST, () => {
+            console.log(`🚀 BKI Ship Certification API Server running on ${HOST}:${PORT}`);
+            console.log(`📚 API Documentation available at http://${HOST}:${PORT}/health`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);

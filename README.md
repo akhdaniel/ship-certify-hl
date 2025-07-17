@@ -129,10 +129,43 @@ npm run dev
 
 ## Usage
 
-### Akses Aplikasi
+### Local Development Access
 - **Frontend**: http://localhost:8080
 - **API Server**: http://localhost:3000
 - **Health Check**: http://localhost:3000/health
+
+### Public IP Deployment
+To deploy the system on a public IP address:
+
+```bash
+# Use the automated deployment script
+./deploy-public.sh
+
+# Or manually configure:
+# 1. Set environment variables
+export PUBLIC_IP=$(curl -s https://ipinfo.io/ip)
+
+# 2. Create environment files
+cp api-server/env.example api-server/.env
+cp frontend/env.example frontend/.env
+
+# 3. Update frontend/.env with your public IP
+echo "VITE_API_URL=http://$PUBLIC_IP:3000" > frontend/.env
+
+# 4. Start the system
+./deploy.sh
+```
+
+**Access URLs (replace YOUR_PUBLIC_IP with your actual IP):**
+- **Frontend**: http://YOUR_PUBLIC_IP:8080
+- **API Server**: http://YOUR_PUBLIC_IP:3000
+- **Health Check**: http://YOUR_PUBLIC_IP:3000/health
+
+**Important Security Notes:**
+- Configure your firewall to allow ports 3000 and 8080
+- Use HTTPS in production environments
+- Change the JWT_SECRET in api-server/.env
+- Consider using a reverse proxy (nginx) for production
 
 ### Role Switching
 Gunakan dropdown di header untuk berganti peran:
