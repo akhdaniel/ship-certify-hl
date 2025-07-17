@@ -45,26 +45,34 @@ fi
 echo "✅ Chaincode packaged successfully"
 
 # Install chaincode on Authority peer
-echo "Installing chaincode on Authority peer..."
 setGlobalsForPeer0Authority
-peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz
-
-if [ $? -ne 0 ]; then
-    echo "Failed to install chaincode on Authority peer"
-    exit 1
+PACKAGE_INSTALLED=$(peer lifecycle chaincode queryinstalled | grep "${CHAINCODE_NAME}_${CHAINCODE_VERSION}")
+if [ -n "$PACKAGE_INSTALLED" ]; then
+    echo "Chaincode ${CHAINCODE_NAME}_${CHAINCODE_VERSION} already installed on Authority peer. Skipping install."
+else
+    echo "Installing chaincode on Authority peer..."
+    peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz
+    if [ $? -ne 0 ]; then
+        echo "Failed to install chaincode on Authority peer"
+        exit 1
+    fi
 fi
 
 # Install chaincode on ShipOwner peer
-echo "Installing chaincode on ShipOwner peer..."
 setGlobalsForPeer0ShipOwner
-peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz
-
-if [ $? -ne 0 ]; then
-    echo "Failed to install chaincode on ShipOwner peer"
-    exit 1
+PACKAGE_INSTALLED=$(peer lifecycle chaincode queryinstalled | grep "${CHAINCODE_NAME}_${CHAINCODE_VERSION}")
+if [ -n "$PACKAGE_INSTALLED" ]; then
+    echo "Chaincode ${CHAINCODE_NAME}_${CHAINCODE_VERSION} already installed on ShipOwner peer. Skipping install."
+else
+    echo "Installing chaincode on ShipOwner peer..."
+    peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz
+    if [ $? -ne 0 ]; then
+        echo "Failed to install chaincode on ShipOwner peer"
+        exit 1
+    fi
 fi
 
-echo "✅ Chaincode installed on both peers"
+echo "✅ Chaincode install step completed (skipped if already installed)"
 
 # Query package ID
 echo "Querying chaincode package ID..."
