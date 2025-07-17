@@ -1,7 +1,7 @@
 <template>
   <div class="ship-owners-container">
     <!-- Header Section -->
-    <div class="page-header card-gradient">
+    <!-- <div class="page-header card-gradient"> -->
       <div class="header-content-section flex-responsive">
         <div class="header-title">
           <div class="title-icon">👥</div>
@@ -23,11 +23,11 @@
           Daftarkan Ship Owner Baru
         </n-button>
       </div>
-    </div>
+    <!-- </div> -->
 
     <n-space vertical size="large" class="content-space">
       <!-- Search Section -->
-      <div class="search-section card-gradient">
+      <!-- <div class="search-section card-gradient"> -->
         <n-input
           v-model:value="searchQuery"
           placeholder="Cari ship owner berdasarkan nama atau perusahaan..."
@@ -39,10 +39,10 @@
             <n-icon :component="SearchIcon" />
           </template>
         </n-input>
-      </div>
+      <!-- </div> -->
 
       <!-- Data Table Section -->
-      <div class="table-section card-gradient">
+      <!-- <div class="table-section card-gradient"> -->
         <n-data-table
           :columns="columns"
           :data="filteredShipOwners"
@@ -51,7 +51,7 @@
           class="responsive-table"
           :scroll-x="800"
         />
-      </div>
+      <!-- </div> -->
     </n-space>
 
     <!-- Add Ship Owner Modal -->

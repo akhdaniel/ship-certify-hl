@@ -75,6 +75,7 @@
                   value-format="yyyy-MM-dd"
                   type="date"
                   style="width: 100%"
+                  placeholder="Pilih tanggal"
                 />
               </n-form-item>
             </n-grid-item>
@@ -85,6 +86,7 @@
                   value-format="yyyy-MM-dd"
                   type="date"
                   style="width: 100%"
+                  placeholder="Pilih tanggal"
                 />
               </n-form-item>
             </n-grid-item>
@@ -136,7 +138,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useMessage } from 'naive-ui'
+import { useMessage, NDatePicker } from 'naive-ui'
 import { authorityApi, certificateApi, surveyApi, vesselApi, shipOwnerApi } from '@/services/api'
 
 const message = useMessage()
@@ -159,8 +161,8 @@ const newCertificate = ref({
   vesselId: '',
   surveyId: '',
   certificateType: '',
-  validFrom: '',
-  validTo: ''
+  validFrom: null,
+  validTo: null
 })
 
 const statistics = ref({
@@ -190,8 +192,26 @@ const certificateRules = {
   vesselId: { required: true, message: 'ID Kapal harus diisi' },
   surveyId: { required: true, message: 'Survey harus dipilih' },
   certificateType: { required: true, message: 'Jenis sertifikat harus dipilih' },
-  validFrom: { required: true, message: 'Tanggal mulai berlaku harus diisi' },
-  validTo: { required: true, message: 'Tanggal berakhir harus diisi' }
+  validFrom: { 
+    required: true, 
+    message: 'Tanggal mulai berlaku harus diisi',
+    validator: (rule, value) => {
+      if (!value) {
+        return new Error('Tanggal mulai berlaku harus diisi')
+      }
+      return true
+    }
+  },
+  validTo: { 
+    required: true, 
+    message: 'Tanggal berakhir harus diisi',
+    validator: (rule, value) => {
+      if (!value) {
+        return new Error('Tanggal berakhir harus diisi')
+      }
+      return true
+    }
+  }
 }
 
 const certificateTypeOptions = [
@@ -232,7 +252,14 @@ const handleIssueCertificate = async () => {
     await certificateFormRef.value?.validate()
     submittingCertificate.value = true
     
-    await certificateApi.create(newCertificate.value)
+    // Prepare data for API call, ensuring dates are properly formatted
+    const certificateData = {
+      ...newCertificate.value,
+      validFrom: newCertificate.value.validFrom || '',
+      validTo: newCertificate.value.validTo || ''
+    }
+    
+    await certificateApi.create(certificateData)
     
     message.success('Sertifikat berhasil dikeluarkan')
     resetCertificateForm()
@@ -265,8 +292,8 @@ const resetCertificateForm = () => {
     vesselId: '',
     surveyId: '',
     certificateType: '',
-    validFrom: '',
-    validTo: ''
+    validFrom: null,
+    validTo: null
   }
 }
 

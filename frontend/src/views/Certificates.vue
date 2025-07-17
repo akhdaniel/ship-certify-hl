@@ -1,7 +1,12 @@
 <template>
   <div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
-      <n-h2>Daftar Sertifikat</n-h2>
+
+
+    <div class="header-content-section flex-responsive">
+      <div class="header-title">
+        <div class="title-icon">📜 </div>
+        <n-h2 class="page-title">Daftar Sertifikat</n-h2>
+      </div>
       <n-space>
         <n-input
           v-model:value="verifyId"
@@ -13,6 +18,7 @@
         </n-button>
       </n-space>
     </div>
+
 
     <n-space vertical size="large">
       <n-input
@@ -298,3 +304,220 @@ onMounted(() => {
   loadCertificates()
 })
 </script>
+
+
+<style scoped>
+.ship-owners-container {
+  padding: 0;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s infinite;
+}
+
+.header-content-section {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-icon {
+  font-size: 2.5rem;
+  background: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: float 3s ease-in-out infinite;
+}
+
+.page-title {
+  margin: 0 !important;
+  background: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.add-button {
+  background: var(--gradient-primary) !important;
+  border: none !important;
+  border-radius: 0.75rem !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.add-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+.content-space {
+  width: 100%;
+}
+
+.search-section {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  max-width: 500px;
+  border-radius: 0.75rem !important;
+}
+
+.table-section {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.responsive-table {
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-content-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .header-title {
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .title-icon {
+    font-size: 2rem;
+  }
+  
+  .add-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .search-section {
+    padding: 1rem;
+  }
+  
+  .search-input {
+    max-width: 100%;
+  }
+  
+  .table-section {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ship-owners-container {
+    padding: 0 0.5rem;
+  }
+  
+  .page-header,
+  .search-section,
+  .table-section {
+    border-radius: 0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+  
+  .header-content-section {
+    padding: 0.75rem;
+  }
+  
+  .page-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Animation keyframes */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Custom table styles */
+:deep(.n-data-table) {
+  background: transparent !important;
+  border-radius: 0.75rem !important;
+}
+
+:deep(.n-data-table-th) {
+  background: var(--gradient-primary) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border: none !important;
+}
+
+:deep(.n-data-table-td) {
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1) !important;
+}
+
+:deep(.n-data-table-tr:hover .n-data-table-td) {
+  background: rgba(102, 126, 234, 0.05) !important;
+}
+
+/* Custom input styles */
+:deep(.n-input) {
+  border-radius: 0.75rem !important;
+}
+
+:deep(.n-input:focus-within) {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+/* Modal styles */
+:deep(.n-modal) {
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
+:deep(.n-card) {
+  background: var(--gradient-card) !important;
+  border-radius: 1rem !important;
+}
+</style>

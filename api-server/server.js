@@ -88,23 +88,35 @@ class FabricService {
             const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
             
             console.log('Using connection profile with absolute paths');
+            console.log('Connection profile peers:', Object.keys(ccp.peers || {}));
             
             this.gateway = new Gateway();
             await this.gateway.connect(ccp, {
                 wallet: this.wallet,
                 identity: userId,
-                discovery: { enabled: false, asLocalhost: true },
+                discovery: { 
+                    enabled: true, 
+                    asLocalhost: true 
+                },
                 eventHandlerOptions: {
                     strategy: null
+                },
+                queryHandlerOptions: {
+                    timeout: 45
                 }
             });
 
             const network = await this.gateway.getNetwork(channelName);
             this.contract = network.getContract(chaincodeName);
             
+            console.log('Successfully connected to network and got contract');
             return this.contract;
         } catch (error) {
             console.error(`Failed to connect to network: ${error}`);
+            console.error('Error details:', error.message);
+            if (error.stack) {
+                console.error('Stack trace:', error.stack);
+            }
             throw error;
         }
     }
@@ -119,36 +131,69 @@ class FabricService {
         try {
             console.log(`Submitting transaction: ${functionName} with args:`, args);
             
-            // Use default contract submission
-            const result = await this.contract.submitTransaction(functionName, ...args);
-            console.log(`Transaction result:`, result.toString());
-            return JSON.parse(result.toString());
-        } catch (error) {
-            console.error(`Failed to submit transaction: ${error}`);
+            // Add retry logic for network issues
+            let retries = 3;
+            let lastError;
+            
+            while (retries > 0) {
+                try {
+                    // Use the contract to submit transaction
+                    const result = await this.contract.submitTransaction(functionName, ...args);
+                    console.log(`Transaction result:`, result.toString());
+                    
+                    if (result.toString().trim() === '') {
+                        return { success: true, message: 'Transaction submitted successfully' };
+                    }
+                    
+                    return JSON.parse(result.toString());
+                } catch (error) {
+                    lastError = error;
+                    console.error(`Transaction attempt failed (${4 - retries}/3):`, error.message);
+                    
+                    if (error.message.includes('No valid responses') || 
+                        error.message.includes('connection error') ||
+                        error.message.includes('UNAVAILABLE')) {
+                        retries--;
+                        if (retries > 0) {
+                            console.log(`Retrying in 2 seconds... (${retries} attempts left)`);
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            continue;
+                        }
+                    } else {
+                        // For other errors, don't retry
+                        break;
+                    }
+                }
+            }
+            
+            console.error(`Failed to submit transaction after all retries: ${lastError}`);
             console.error(`Transaction details:`, {
                 functionName,
                 args,
-                error: error.message,
-                responses: error.responses || [],
-                errors: error.errors || []
+                error: lastError.message,
+                responses: lastError.responses || [],
+                errors: lastError.errors || []
             });
             
             // Log more detailed error information
-            if (error.responses && error.responses.length > 0) {
-                console.error(`Peer responses:`, error.responses.map(r => ({
+            if (lastError.responses && lastError.responses.length > 0) {
+                console.error(`Peer responses:`, lastError.responses.map(r => ({
                     status: r.response?.status,
                     message: r.response?.message,
                     peer: r.peer
                 })));
             }
             
-            if (error.errors && error.errors.length > 0) {
-                console.error(`Peer errors:`, error.errors.map(e => ({
+            if (lastError.errors && lastError.errors.length > 0) {
+                console.error(`Peer errors:`, lastError.errors.map(e => ({
                     message: e.message,
                     peer: e.peer
                 })));
             }
             
+            throw lastError;
+        } catch (error) {
+            console.error(`Failed to submit transaction: ${error}`);
             throw error;
         }
     }

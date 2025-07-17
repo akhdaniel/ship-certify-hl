@@ -1,21 +1,108 @@
 <template>
   <div>
-    <n-grid x-gap="12" y-gap="12" cols="1 l:2">
-      <n-grid-item>
-        <n-card title="Selamat Datang" embedded class="welcome-card">
-          <template #header-extra>
-            <n-icon size="24" color="#1890ff">
-              🚢
-            </n-icon>
-          </template>
-          <n-text>
-            Sistem Sertifikasi Kapal Biro Klasifikasi Indonesia (BKI) menggunakan teknologi blockchain 
-            untuk memastikan transparansi dan keamanan dalam proses sertifikasi kapal.
-          </n-text>
-        </n-card>
-      </n-grid-item>
+    <!-- Top Menu Header -->
+    <div class="top-menu-header">
+      <div class="menu-container">
+        <div class="menu-title">
+          <div class="menu-icon">🏠</div>
+          <h1 class="menu-text">Dashboard Vessels Certification</h1>
+          <h1 class="menu-text-mobile">Dashboard BKI</h1>
+        </div>
+        <div class="menu-actions">
+          <div class="quick-stats">
+            <div class="quick-stat">
+              <span class="quick-stat-icon">🚢</span>
+              <span class="quick-stat-text">{{ statistics.totalVessels }} Kapal</span>
+            </div>
+            <div class="quick-stat">
+              <span class="quick-stat-icon">📜</span>
+              <span class="quick-stat-text">{{ statistics.activeCertificates }} Sertifikat</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <n-grid-item>
+    <!-- Navigation Menu Items -->
+    <div class="navigation-menu">
+      <div class="menu-grid">
+        <div class="menu-item" @click="$router.push('/vessels')">
+          <div class="menu-item-icon">🚢</div>
+          <div class="menu-item-content">
+            <div class="menu-item-title">Kapal</div>
+            <div class="stat-value" v-if="!loading">{{ statistics.totalVessels }}</div>
+                <n-skeleton v-else width="60px" height="28px" />
+            <div class="authority-box-action">Kelola dan lihat daftar kapal →</div>
+          </div>
+        </div>
+
+        <div class="menu-item" @click="$router.push('/certificates')">
+          <div class="menu-item-icon">📜</div>
+          <div class="menu-item-content">
+            <div class="menu-item-title">Sertifikat</div>
+                <div class="stat-value" v-if="!loading">{{ statistics.activeCertificates }}</div>
+                <n-skeleton v-else width="60px" height="28px" />  
+            <div class="authority-box-action">Lihat dan verifikasi sertifikat →</div>
+          </div>
+        </div>
+
+        <div v-if="userStore.isAuthority() || userStore.isShipOwner()" class="menu-item" @click="$router.push('/surveys')">
+          <div class="menu-item-icon">🔍</div>
+          <div class="menu-item-content">
+            <div class="menu-item-title">Survey</div>
+                <div class="stat-value" v-if="!loading">{{ statistics.activeSurveys }}</div>
+                <n-skeleton v-else width="60px" height="28px" />
+
+            <div class="authority-box-action">Jadwal dan hasil survey →</div>
+          </div>
+        </div>
+
+        <div v-if="userStore.isAuthority() || userStore.isShipOwner()" class="menu-item" @click="$router.push('/findings')">
+          <div class="menu-item-icon">⚠️</div>
+          <div class="menu-item-content">
+            <div class="menu-item-title">Findings</div>
+                <div class="stat-value" v-if="!loading">{{ statistics.openFindings }}</div>
+                <n-skeleton v-else width="60px" height="28px" />
+
+            <div class="authority-box-action">Temuan dan tindak lanjut →</div>
+          </div>
+        </div>
+
+        <div v-if="userStore.isAuthority()" class="menu-item" @click="$router.push('/shipowners')">
+          <div class="menu-item-icon">👥</div>
+          <div class="menu-item-content">
+            <div class="menu-item-title">Ship Owners</div>
+              <div class="authority-box-value">{{ Math.floor(statistics.totalVessels * 0.6) }}</div>
+
+            <div class="authority-box-action">Kelola pemilik kapal →</div>
+          </div>
+        </div>
+
+        <div v-if="userStore.isAuthority()" class="menu-item" @click="$router.push('/authority')">
+          <div class="menu-item-icon">🏛️</div>
+          <div class="menu-item-content">
+            <div class="menu-item-title">Authority</div>
+              <div class="authority-box-value">✓</div>
+              <div class="authority-box-action">Pengaturan BKI Authority →</div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- <n-grid x-gap="12" y-gap="12" cols="1 l:2"> -->
+      <div class="authority-panel welcome-card card-gradient welcome-content">
+        <div class="welcome-header">
+          <div class="welcome-title">Selamat Datang</div>
+          <div class="welcome-icon">🚢</div>
+        </div>
+        <div class="welcome-description">
+          Sistem Sertifikasi menggunakan teknologi blockchain 
+          untuk memastikan transparansi dan keamanan dalam proses sertifikasi kapal.
+        </div>
+      </div>
+
+      <!-- <n-grid-item>
         <div class="statistics-panel card-gradient">
           <div class="statistics-header">
             <div class="stat-icon">📊</div>
@@ -60,29 +147,32 @@
             </div>
           </div>
         </div>
-      </n-grid-item>
-    </n-grid>
+      </n-grid-item> -->
+    <!-- </n-grid> -->
 
     <!-- User Role Section -->
-    <div class="user-role-section">
-      <n-card title="Peran Pengguna" embedded class="role-card">
-        <template #header-extra>
-          <div class="role-icon">
-            {{ userStore.isAuthority() ? '⚓' : userStore.isShipOwner() ? '👤' : '🌐' }}
-          </div>
-        </template>
-        <n-space vertical>
-          <n-text strong>Peran Saat Ini: {{ currentRoleText }}</n-text>
-          <n-text depth="3">{{ roleDescription }}</n-text>
-        </n-space>
-      </n-card>
+    <div class="user-role-section authority-panel card-gradient role-card role-content">
+      <div class="role-header">
+      <div class="role-title">Peran Pengguna</div>
+      <div class="role-icon">
+        {{ userStore.isAuthority() ? '⚓' : userStore.isShipOwner() ? '👤' : '🌐' }}
+      </div>
+      </div>
+      <div class="role-description-wrapper">
+      <div class="role-current">
+        Peran Saat Ini: {{ currentRoleText }}
+      </div>
+      <div class="role-description">
+        {{ roleDescription }}
+      </div>
+      </div>
     </div>
 
-    <n-divider />
+    <!-- <n-divider /> -->
 
     <!-- Role-specific content -->
     <div v-if="userStore.isAuthority()" class="authority-panel card-gradient">
-      <div class="authority-header">
+      <!--div class="authority-header">
         <div class="authority-icon">⚓</div>
         <n-h2 class="authority-title">Panel BKI Authority</n-h2>
       </div>
@@ -142,26 +232,24 @@
             </div>
           </div>
         </div>
-      </div>        
+      </div-->        
     </div>
 
-    <div v-else-if="userStore.isShipOwner()">
-      <n-h2>Panel Ship Owner</n-h2>
-      <n-grid x-gap="12" y-gap="12" cols="1 m:2">
-        <n-grid-item>
-          <n-card hoverable @click="$router.push('/vessels')">
-            <n-statistic label="Kapal Saya" :value="statistics.myVessels" />
-          </n-card>
-        </n-grid-item>
-        <n-grid-item>
-          <n-card hoverable @click="$router.push('/findings')">
-            <n-statistic label="Findings Pending" :value="statistics.pendingFindings" />
-          </n-card>
-        </n-grid-item>
-      </n-grid>
+    <div v-else-if="userStore.isShipOwner()" class="authority-panel card-gradient shipowner-panel">
+      <h2 class="shipowner-title">Panel Ship Owner</h2>
+      <div class="shipowner-grid">
+      <div class="shipowner-card card-gradient" @click="$router.push('/vessels')">
+        <div class="shipowner-label">Kapal Saya</div>
+        <div class="shipowner-value">{{ statistics.myVessels }}</div>
+      </div>
+      <div class="shipowner-card card-gradient" @click="$router.push('/findings')">
+        <div class="shipowner-label">Findings Pending</div>
+        <div class="shipowner-value">{{ statistics.pendingFindings }}</div>
+      </div>
+      </div>
     </div>
 
-    <div v-else>
+    <div v-else class="authority-panel card-gradient">
       <n-h2>Informasi Publik</n-h2>
       <n-space vertical size="large">
         <n-card title="Tentang BKI">
@@ -263,6 +351,331 @@ onMounted(() => {
 <style scoped>
 @import '../styles/responsive-gradients.css';
 
+/* Top Menu Header Styles */
+.top-menu-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.top-menu-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s infinite;
+}
+
+.menu-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  color: white;
+}
+
+.menu-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menu-icon {
+  font-size: 2.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.menu-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+  display: block;
+  filter: brightness(1.2);
+}
+
+.menu-text-mobile {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+  display: none;
+  filter: brightness(1.2);
+}
+
+.menu-actions {
+  display: flex;
+  align-items: center;
+}
+
+.quick-stats {
+  display: flex;
+  gap: 1.5rem;
+  color: #ffffff;
+  filter: brightness(1.1);
+}
+
+.quick-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.1);
+}
+
+.quick-stat:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+}
+
+.quick-stat-icon {
+  font-size: 1.25rem;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.15);
+}
+
+.quick-stat-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 255, 255, 0.2);
+  filter: brightness(1.2);
+}
+
+/* Responsive design for top menu */
+@media (max-width: 1024px) {
+  .menu-container {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .menu-text {
+    font-size: 1.5rem;
+  }
+  
+  .quick-stats {
+    gap: 1rem;
+  }
+  
+  .quick-stat {
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .quick-stat-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .menu-container {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .menu-text {
+    display: none;
+  }
+  
+  .menu-text-mobile {
+    display: block;
+  }
+  
+  .menu-icon {
+    font-size: 2rem;
+  }
+  
+  .quick-stats {
+    gap: 0.75rem;
+  }
+  
+  .quick-stat {
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .quick-stat-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-container {
+    padding: 0.75rem;
+  }
+  
+  .menu-title {
+    gap: 0.75rem;
+  }
+  
+  .menu-text-mobile {
+    font-size: 1rem;
+  }
+  
+  .menu-icon {
+    font-size: 1.75rem;
+  }
+  
+  .quick-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .quick-stat {
+    justify-content: center;
+    padding: 0.5rem;
+  }
+}
+
+/* Float animation for menu icon */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Navigation Menu Styles */
+.navigation-menu {
+  margin-bottom: 2rem;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.menu-item {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.menu-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+}
+
+.menu-item:hover::before {
+  width: 8px;
+}
+
+.menu-item-icon {
+  font-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+  flex-shrink: 0;
+  animation: float 3s ease-in-out infinite;
+  animation-delay: calc(var(--index, 0) * 0.2s);
+}
+
+.menu-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-item-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.menu-item-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* Responsive design for navigation menu */
+@media (max-width: 768px) {
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .menu-item {
+    padding: 1rem;
+  }
+  
+  .menu-item-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 2rem;
+  }
+  
+  .menu-item-title {
+    font-size: 1.125rem;
+  }
+  
+  .menu-item-description {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .menu-item-content {
+    width: 100%;
+  }
+}
+
 /* General Card Styles */
 .welcome-card, .role-card {
   transition: all 0.3s ease;
@@ -281,220 +694,486 @@ onMounted(() => {
   font-size: 1.5rem;
 }
 
-/* Statistics Panel Styles */
-.statistics-panel {
+/* Welcome Card Styles */
+.welcome-content {
   padding: 1.5rem;
   border-radius: 1rem;
-  position: relative;
-  overflow: hidden;
-  min-height: 100%;
-}
-
-.statistics-panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-  animation: shimmer 3s infinite;
-}
-
-.statistics-header {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.stat-icon {
-  font-size: 2rem;
-  background: var(--gradient-primary);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: float 3s ease-in-out infinite;
-}
-
-.statistics-title {
-  margin: 0 !important;
-  background: var(--gradient-primary);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.statistics-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.stat-box {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
+.welcome-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
-.stat-box:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.stat-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.stat-box:hover::before {
-  width: 8px;
-}
-
-.stat-box-icon {
-  font-size: 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.stat-box-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.stat-value {
-  font-size: 1.75rem;
+.welcome-title {
+  font-size: 1.25rem;
   font-weight: 700;
   color: #1e293b;
 }
 
-/* Individual stat box colors */
-.vessels-stat::before {
-  background: var(--gradient-ocean);
+.welcome-icon {
+  font-size: 1.5rem;
+  color: #1890ff;
 }
 
-.vessels-stat .stat-box-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%);
-  color: white;
+.welcome-description {
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
-.certificates-stat::before {
-  background: var(--gradient-secondary);
+/* Role Card Styles */
+.role-content {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.certificates-stat .stat-box-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%);
-  color: white;
+.role-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
-.surveys-stat::before {
-  background: var(--gradient-success);
+.role-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-.surveys-stat .stat-box-icon {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%);
-  color: white;
+.role-icon {
+  font-size: 1.5rem;
 }
 
-.findings-stat::before {
-  background: var(--gradient-warning);
+.role-description-wrapper {
+  color: #333;
+  font-size: 1rem;
 }
 
-.findings-stat .stat-box-icon {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 50%);
-  color: white;
+.role-current {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
 }
 
-/* Responsive Design for Statistics */
+.role-description {
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* Ship Owner Panel Styles */
+.shipowner-panel {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.shipowner-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.shipowner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.shipowner-card {
+  padding: 1.5rem;
+  cursor: pointer;
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+
+.shipowner-card:hover {
+  transform: translateY(-2px);
+}
+
+.shipowner-label {
+  font-size: 1rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.shipowner-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1890ff;
+}
+
+/* Dark Mode Styles for New Components */
+[data-theme="dark"] .welcome-title,
+[data-theme="dark"] .role-title,
+[data-theme="dark"] .shipowner-title,
+[data-theme="dark"] .role-current {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .welcome-description,
+[data-theme="dark"] .role-description-wrapper {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .welcome-icon {
+  color: #c084fc !important;
+}
+
+[data-theme="dark"] .role-description,
+[data-theme="dark"] .shipowner-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .shipowner-value {
+  color: #c084fc !important;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-  .statistics-grid {
+  .shipowner-grid {
     grid-template-columns: 1fr;
   }
   
-  .statistics-panel {
+  .welcome-content,
+  .role-content,
+  .shipowner-panel {
     padding: 1rem;
   }
   
-  .statistics-header {
-    margin-bottom: 1rem;
+  .welcome-title,
+  .role-title {
+    font-size: 1.125rem;
   }
   
-  .stat-box {
-    padding: 1rem;
-  }
-  
-  .stat-box-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.5rem;
-  }
-  
-  .stat-value {
-    font-size: 1.5rem;
-  }
-  
-  .statistics-title {
+  .shipowner-title {
     font-size: 1.25rem;
   }
   
-  .stat-icon {
-    font-size: 1.5rem;
+  .shipowner-value {
+    font-size: 1.75rem;
   }
 }
 
 @media (max-width: 480px) {
-  .stat-box {
+  .welcome-header,
+  .role-header {
     flex-direction: column;
     text-align: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
   
-  .stat-box-content {
-    width: 100%;
+  .welcome-description,
+  .role-description-wrapper {
+    text-align: center;
+  }
+  
+  .shipowner-card {
+    padding: 1rem;
+    text-align: center;
   }
 }
 
-/* Authority Panel Styles */
-.authority-panel {
-  margin: 2rem 0;
-  padding: 1.5rem;
-  border-radius: 1rem;
+/* Dark Mode Support for Home.vue */
+
+/* Top Menu Header Dark Mode */
+[data-theme="dark"] .top-menu-header {
+  background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 50%, #6d28d9 100%) !important;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.4) !important;
+}
+
+[data-theme="dark"] .top-menu-header .menu-text,
+[data-theme="dark"] .top-menu-header .menu-text-mobile {
+  color: #f1f5f9 !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 20px rgba(139, 92, 246, 0.4) !important;
+}
+
+[data-theme="dark"] .top-menu-header .quick-stat {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .top-menu-header .quick-stat:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .top-menu-header .quick-stat-text,
+[data-theme="dark"] .top-menu-header .quick-stat-icon {
+  color: #f1f5f9 !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Navigation Menu Dark Mode */
+[data-theme="dark"] .menu-item {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .menu-item:hover {
+  background: rgba(45, 55, 72, 0.9) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .menu-item::before {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+}
+
+[data-theme="dark"] .menu-item-icon {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4) !important;
+}
+
+[data-theme="dark"] .menu-item-title {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .authority-box-action {
+  color: #e2e8f0 !important;
+}
+
+/* Welcome Card Dark Mode */
+[data-theme="dark"] .welcome-card {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .welcome-card:hover {
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.25) !important;
+}
+
+/* Role Card Dark Mode */
+[data-theme="dark"] .role-card {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .role-card:hover {
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.25) !important;
+}
+
+/* Card Gradient Dark Mode */
+[data-theme="dark"] .card-gradient {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .card-gradient:hover {
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.25) !important;
+}
+
+/* Authority Panel Dark Mode */
+[data-theme="dark"] .authority-panel {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .authority-panel::before {
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.03) 50%, transparent 70%) !important;
+}
+
+/* Statistics Panel Dark Mode */
+[data-theme="dark"] .statistics-panel {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .statistics-panel::before {
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.03) 50%, transparent 70%) !important;
+}
+
+[data-theme="dark"] .statistics-title {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+[data-theme="dark"] .stat-icon {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Stat Box Dark Mode */
+[data-theme="dark"] .stat-box {
+  background: rgba(55, 65, 81, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .stat-box:hover {
+  background: rgba(55, 65, 81, 0.9) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .stat-box-icon {
+  background: rgba(75, 85, 99, 0.8) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .stat-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .stat-value {
+  color: #f1f5f9 !important;
+}
+
+/* Authority Box Dark Mode */
+[data-theme="dark"] .authority-box {
+  background: rgba(55, 65, 81, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .authority-box:hover {
+  background: rgba(55, 65, 81, 0.9) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .authority-box-icon {
+  background: rgba(75, 85, 99, 0.8) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .authority-box-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .authority-box-value {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .authority-box-action {
+  color: #c084fc !important;
+}
+
+[data-theme="dark"] .authority-box:hover .authority-box-action {
+  color: #d8b4fe !important;
+}
+
+/* Authority Title Dark Mode */
+[data-theme="dark"] .authority-title {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+[data-theme="dark"] .authority-icon {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Ship Owner Cards Dark Mode */
+[data-theme="dark"] .shipowner-card {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Naive UI Components Dark Mode Overrides */
+[data-theme="dark"] :deep(.n-card) {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-card .n-card-header) {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-text) {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-h2),
+[data-theme="dark"] :deep(.n-h3) {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-steps .n-step .n-step-indicator .n-step-indicator__index) {
+  background: rgba(124, 58, 237, 0.8) !important;
+  color: white !important;
+}
+
+[data-theme="dark"] :deep(.n-steps .n-step .n-step-content .n-step-content-header) {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-steps .n-step .n-step-content .n-step-content-description) {
+  color: #94a3b8 !important;
+}
+
+/* Inline Style Overrides for Dark Mode */
+[data-theme="dark"] div[style*="background: #fff"] {
+  background: rgba(45, 55, 72, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] div[style*="color: #333"] {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] div[style*="color: #64748b"] {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] div[style*="color: #1890ff"] {
+  color: #c084fc !important;
+}
+
+/* Responsive Dark Mode Adjustments */
+@media (max-width: 768px) {
+  [data-theme="dark"] .menu-item {
+    background: rgba(45, 55, 72, 0.9) !important;
+  }
+  
+  [data-theme="dark"] .top-menu-header {
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  [data-theme="dark"] .authority-box,
+  [data-theme="dark"] .stat-box {
+    background: rgba(45, 55, 72, 0.85) !important;
+  }
+}
+
+/* Card Gradient Base Styles */
+.card-gradient {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.authority-panel::before {
+.card-gradient::before {
   content: '';
   position: absolute;
   top: 0;
@@ -503,267 +1182,10 @@ onMounted(() => {
   bottom: 0;
   background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
   animation: shimmer 3s infinite;
+  pointer-events: none;
 }
 
-.authority-header {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  width: 100%;
-}
-
-.authority-icon {
-  font-size: 2.5rem;
-  background: var(--gradient-primary);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: float 3s ease-in-out infinite;
-}
-
-.authority-title {
-  margin: 0 !important;
-  background: var(--gradient-primary);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.authority-content {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 100%;
-  clear: both;
-}
-
-.authority-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.authority-box {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.authority-box:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
-}
-
-.authority-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.authority-box:hover::before {
-  width: 8px;
-}
-
-.authority-box-icon {
-  font-size: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-}
-
-.authority-box-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.authority-box-label {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.authority-box-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
-}
-
-.authority-box-action {
-  font-size: 0.75rem;
-  color: #667eea;
-  font-weight: 600;
-  opacity: 0.8;
-  transition: opacity 0.3s ease;
-}
-
-.authority-box:hover .authority-box-action {
-  opacity: 1;
-}
-
-/* Individual authority box colors */
-.vessels-box::before {
-  background: var(--gradient-ocean);
-}
-
-.vessels-box .authority-box-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%);
-  color: white;
-}
-
-.surveys-box::before {
-  background: var(--gradient-success);
-}
-
-.surveys-box .authority-box-icon {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%);
-  color: white;
-}
-
-.findings-box::before {
-  background: var(--gradient-warning);
-}
-
-.findings-box .authority-box-icon {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 50%);
-  color: white;
-}
-
-.certificates-box::before {
-  background: var(--gradient-secondary);
-}
-
-.certificates-box .authority-box-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%);
-  color: white;
-}
-
-.shipowners-box::before {
-  background: var(--gradient-marine);
-}
-
-.shipowners-box .authority-box-icon {
-  background: linear-gradient(135deg, #209cff 0%, #68e0cf 50%);
-  color: white;
-}
-
-.authority-admin-box::before {
-  background: var(--gradient-dark);
-}
-
-.authority-admin-box .authority-box-icon {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%);
-  color: white;
-}
-
-/* Responsive Design for Authority Panel */
-@media (max-width: 1024px) {
-  .authority-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .authority-panel {
-    padding: 1rem;
-  }
-  
-  .authority-header {
-    margin-bottom: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .authority-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .authority-box {
-    padding: 1rem;
-  }
-  
-  .authority-box-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.5rem;
-  }
-  
-  .authority-box-value {
-    font-size: 1.5rem;
-  }
-  
-  .authority-header {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .authority-title {
-    font-size: 1.5rem;
-  }
-  
-  .authority-icon {
-    font-size: 2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .authority-box {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.75rem;
-  }
-  
-  .authority-box-content {
-    width: 100%;
-  }
-  
-  .authority-box-icon {
-    align-self: center;
-  }
-}
-
-/* Animation keyframes */
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-
-/* Card hover effects */
-:deep(.n-card) {
-  transition: all 0.3s ease;
-}
-
-:deep(.n-card:hover) {
+.card-gradient:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }

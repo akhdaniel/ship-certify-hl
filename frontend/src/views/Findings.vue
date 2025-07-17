@@ -1,38 +1,47 @@
 <template>
   <div>
-    <n-h2>Findings Management</n-h2>
-    
-    <n-space vertical size="large">
-      <n-card title="Filter Survey">
-        <n-select
+
+
+    <div class="header-content-section flex-responsive">
+      <div class="header-title">
+        <div class="title-icon">🚢 </div>
+        <n-h2 class="page-title">Daftar Temuan</n-h2>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <div>
+        <n-card title="Filter Survey">
+          <n-select
           v-model:value="selectedSurveyId"
           :options="surveyOptions"
-          placeholder="Pilih survey untuk melihat findings"
+          placeholder="Pilih survey untuk melihat temuan"
           clearable
           @update:value="loadFindings"
-        />
-      </n-card>
+          />
+        </n-card>
+      </div>
 
       <div v-if="selectedSurveyId">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
-          <n-h3>Findings untuk Survey: {{ selectedSurveyId }}</n-h3>
-          <n-button 
-            v-if="userStore.isAuthority()" 
-            type="primary" 
-            @click="showAddModal = true"
-          >
-            Tambah Finding
-          </n-button>
-        </div>
-
-        <n-data-table
-          :columns="columns"
-          :data="findings"
-          :loading="loadingFindings"
-          :pagination="pagination"
-        />
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+        <n-h3>Findings untuk Survey: {{ selectedSurveyId }}</n-h3>
+        <n-button 
+        v-if="userStore.isAuthority()" 
+        type="primary" class="btn-gradient-primary add-button"
+        @click="showAddModal = true"
+        >
+        Tambah Temuan
+        </n-button>
       </div>
-    </n-space>
+
+      <n-data-table
+        :columns="columns"
+        :data="findings"
+        :loading="loadingFindings"
+        :pagination="pagination"
+      />
+      </div>
+    </div>
 
     <!-- Add Finding Modal -->
     <n-modal v-model:show="showAddModal" preset="dialog" title="Tambah Finding">
@@ -475,3 +484,534 @@ onMounted(() => {
   loadSurveys()
 })
 </script>
+
+<style scoped>
+.ship-owners-container {
+  padding: 0;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s infinite;
+}
+
+.header-content-section {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-icon {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: float 3s ease-in-out infinite;
+}
+
+.page-title {
+  margin: 0 !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.add-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  border-radius: 0.75rem !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.add-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+.content-space {
+  width: 100%;
+}
+
+.search-section {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  max-width: 500px;
+  border-radius: 0.75rem !important;
+}
+
+.table-section {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.responsive-table {
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+}
+
+/* Dark Mode Styles moved to end of file for proper precedence */
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-content-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .header-title {
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .title-icon {
+    font-size: 2rem;
+  }
+  
+  .add-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .search-section {
+    padding: 1rem;
+  }
+  
+  .search-input {
+    max-width: 100%;
+  }
+  
+  .table-section {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ship-owners-container {
+    padding: 0 0.5rem;
+  }
+  
+  .page-header,
+  .search-section,
+  .table-section {
+    border-radius: 0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+  
+  .header-content-section {
+    padding: 0.75rem;
+  }
+  
+  .page-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Animation keyframes */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Custom table styles */
+:deep(.n-data-table) {
+  background: transparent !important;
+  border-radius: 0.75rem !important;
+}
+
+:deep(.n-data-table-th) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border: none !important;
+}
+
+:deep(.n-data-table-td) {
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1) !important;
+}
+
+:deep(.n-data-table-tr:hover .n-data-table-td) {
+  background: rgba(102, 126, 234, 0.05) !important;
+}
+
+/* Custom input styles */
+:deep(.n-input) {
+  border-radius: 0.75rem !important;
+}
+
+:deep(.n-input:focus-within) {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+/* Modal styles */
+:deep(.n-modal) {
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
+:deep(.n-card) {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-radius: 1rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* =================================================================== */
+/* COMPREHENSIVE DARK MODE STYLES - HIGHEST SPECIFICITY - DO NOT MOVE */
+/* =================================================================== */
+
+/* Header Section Dark Mode */
+[data-theme="dark"] .header-content-section,
+html[data-theme="dark"] .header-content-section,
+body[data-theme="dark"] .header-content-section {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .title-icon,
+html[data-theme="dark"] .title-icon,
+body[data-theme="dark"] .title-icon {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+[data-theme="dark"] .page-title,
+html[data-theme="dark"] .page-title,
+body[data-theme="dark"] .page-title {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Button Dark Mode */
+[data-theme="dark"] .add-button,
+html[data-theme="dark"] .add-button,
+body[data-theme="dark"] .add-button {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4) !important;
+}
+
+[data-theme="dark"] .add-button:hover,
+html[data-theme="dark"] .add-button:hover,
+body[data-theme="dark"] .add-button:hover {
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.5) !important;
+}
+
+[data-theme="dark"] :deep(.n-button),
+html[data-theme="dark"] :deep(.n-button),
+body[data-theme="dark"] :deep(.n-button) {
+  background: rgba(124, 58, 237, 0.8) !important;
+  border: 1px solid rgba(124, 58, 237, 0.6) !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-button:hover),
+html[data-theme="dark"] :deep(.n-button:hover),
+body[data-theme="dark"] :deep(.n-button:hover) {
+  background: rgba(124, 58, 237, 0.9) !important;
+  border-color: rgba(124, 58, 237, 0.8) !important;
+}
+
+[data-theme="dark"] :deep(.n-button--primary-type),
+html[data-theme="dark"] :deep(.n-button--primary-type),
+body[data-theme="dark"] :deep(.n-button--primary-type) {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%) !important;
+  border: none !important;
+}
+
+/* Dropdown Options Dark Mode */
+[data-theme="dark"] :deep(.n-popover),
+html[data-theme="dark"] :deep(.n-popover),
+body[data-theme="dark"] :deep(.n-popover) {
+  background: rgba(45, 55, 72, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+[data-theme="dark"] :deep(.n-select-menu),
+html[data-theme="dark"] :deep(.n-select-menu),
+body[data-theme="dark"] :deep(.n-select-menu) {
+  background: rgba(45, 55, 72, 0.95) !important;
+}
+
+[data-theme="dark"] :deep(.n-select-option),
+html[data-theme="dark"] :deep(.n-select-option),
+body[data-theme="dark"] :deep(.n-select-option) {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-select-option:hover),
+html[data-theme="dark"] :deep(.n-select-option:hover),
+body[data-theme="dark"] :deep(.n-select-option:hover) {
+  background: rgba(124, 58, 237, 0.2) !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-select-option.n-select-option--selected),
+html[data-theme="dark"] :deep(.n-select-option.n-select-option--selected),
+body[data-theme="dark"] :deep(.n-select-option.n-select-option--selected) {
+  background: rgba(124, 58, 237, 0.3) !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-select .n-base-selection .n-base-suffix),
+html[data-theme="dark"] :deep(.n-select .n-base-selection .n-base-suffix),
+body[data-theme="dark"] :deep(.n-select .n-base-selection .n-base-suffix) {
+  color: #94a3b8 !important;
+}
+
+/* H3 Heading Dark Mode */
+[data-theme="dark"] :deep(.n-h3),
+html[data-theme="dark"] :deep(.n-h3),
+body[data-theme="dark"] :deep(.n-h3) {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-data-table-tr:hover .n-data-table-td),
+html[data-theme="dark"] :deep(.n-data-table-tr:hover .n-data-table-td),
+body[data-theme="dark"] :deep(.n-data-table-tr:hover .n-data-table-td) {
+  background: rgba(124, 58, 237, 0.1) !important;
+}
+
+[data-theme="dark"] :deep(.n-data-table-empty),
+html[data-theme="dark"] :deep(.n-data-table-empty),
+body[data-theme="dark"] :deep(.n-data-table-empty) {
+  color: #94a3b8 !important;
+}
+
+/* Modal Dark Mode */
+[data-theme="dark"] :deep(.n-modal),
+html[data-theme="dark"] :deep(.n-modal),
+body[data-theme="dark"] :deep(.n-modal) {
+  background: rgba(45, 55, 72, 0.95) !important;
+}
+
+[data-theme="dark"] :deep(.n-dialog .n-dialog__title),
+html[data-theme="dark"] :deep(.n-dialog .n-dialog__title),
+body[data-theme="dark"] :deep(.n-dialog .n-dialog__title) {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-dialog .n-dialog__content),
+html[data-theme="dark"] :deep(.n-dialog .n-dialog__content),
+body[data-theme="dark"] :deep(.n-dialog .n-dialog__content) {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-dialog .n-dialog__action),
+html[data-theme="dark"] :deep(.n-dialog .n-dialog__action),
+body[data-theme="dark"] :deep(.n-dialog .n-dialog__action) {
+  background: transparent !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Form Components Dark Mode */
+[data-theme="dark"] :deep(.n-form-item-label),
+html[data-theme="dark"] :deep(.n-form-item-label),
+body[data-theme="dark"] :deep(.n-form-item-label) {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] :deep(.n-input:hover),
+html[data-theme="dark"] :deep(.n-input:hover),
+body[data-theme="dark"] :deep(.n-input:hover) {
+  border-color: rgba(124, 58, 237, 0.6) !important;
+}
+
+[data-theme="dark"] :deep(.n-input__input-el),
+html[data-theme="dark"] :deep(.n-input__input-el),
+body[data-theme="dark"] :deep(.n-input__input-el) {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+[data-theme="dark"] :deep(.n-input__placeholder),
+html[data-theme="dark"] :deep(.n-input__placeholder),
+body[data-theme="dark"] :deep(.n-input__placeholder) {
+  color: #94a3b8 !important;
+}
+
+/* Textarea Dark Mode */
+[data-theme="dark"] :deep(.n-input[type="textarea"]),
+html[data-theme="dark"] :deep(.n-input[type="textarea"]),
+body[data-theme="dark"] :deep(.n-input[type="textarea"]) {
+  background: rgba(55, 65, 81, 0.8) !important;
+}
+
+[data-theme="dark"] :deep(.n-input[type="textarea"] .n-input__input-el),
+html[data-theme="dark"] :deep(.n-input[type="textarea"] .n-input__input-el),
+body[data-theme="dark"] :deep(.n-input[type="textarea"] .n-input__input-el) {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+/* Tag Components Dark Mode */
+[data-theme="dark"] :deep(.n-tag),
+html[data-theme="dark"] :deep(.n-tag),
+body[data-theme="dark"] :deep(.n-tag) {
+  background: rgba(75, 85, 99, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-tag--info-type),
+html[data-theme="dark"] :deep(.n-tag--info-type),
+body[data-theme="dark"] :deep(.n-tag--info-type) {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  color: #93c5fd !important;
+}
+
+[data-theme="dark"] :deep(.n-tag--warning-type),
+html[data-theme="dark"] :deep(.n-tag--warning-type),
+body[data-theme="dark"] :deep(.n-tag--warning-type) {
+  background: rgba(245, 158, 11, 0.3) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  color: #fcd34d !important;
+}
+
+[data-theme="dark"] :deep(.n-tag--error-type),
+html[data-theme="dark"] :deep(.n-tag--error-type),
+body[data-theme="dark"] :deep(.n-tag--error-type) {
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  color: #fca5a5 !important;
+}
+
+[data-theme="dark"] :deep(.n-tag--success-type),
+html[data-theme="dark"] :deep(.n-tag--success-type),
+body[data-theme="dark"] :deep(.n-tag--success-type) {
+  background: rgba(34, 197, 94, 0.3) !important;
+  border-color: rgba(34, 197, 94, 0.5) !important;
+  color: #86efac !important;
+}
+
+/* Space Component Dark Mode */
+[data-theme="dark"] :deep(.n-space),
+html[data-theme="dark"] :deep(.n-space),
+body[data-theme="dark"] :deep(.n-space) {
+  color: #e2e8f0 !important;
+}
+
+/* Loading and Message Dark Mode */
+[data-theme="dark"] :deep(.n-message),
+html[data-theme="dark"] :deep(.n-message),
+body[data-theme="dark"] :deep(.n-message) {
+  background: rgba(45, 55, 72, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-loading-bar),
+html[data-theme="dark"] :deep(.n-loading-bar),
+body[data-theme="dark"] :deep(.n-loading-bar) {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%) !important;
+}
+
+/* Pagination Dark Mode */
+[data-theme="dark"] :deep(.n-pagination),
+html[data-theme="dark"] :deep(.n-pagination),
+body[data-theme="dark"] :deep(.n-pagination) {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-pagination .n-pagination-item),
+html[data-theme="dark"] :deep(.n-pagination .n-pagination-item),
+body[data-theme="dark"] :deep(.n-pagination .n-pagination-item) {
+  background: rgba(55, 65, 81, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] :deep(.n-pagination .n-pagination-item:hover),
+html[data-theme="dark"] :deep(.n-pagination .n-pagination-item:hover),
+body[data-theme="dark"] :deep(.n-pagination .n-pagination-item:hover) {
+  background: rgba(124, 58, 237, 0.3) !important;
+  border-color: rgba(124, 58, 237, 0.5) !important;
+}
+
+[data-theme="dark"] :deep(.n-pagination .n-pagination-item--active),
+html[data-theme="dark"] :deep(.n-pagination .n-pagination-item--active),
+body[data-theme="dark"] :deep(.n-pagination .n-pagination-item--active) {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%) !important;
+  border-color: #7c3aed !important;
+  color: white !important;
+}
+
+/* Scrollbar Dark Mode */
+[data-theme="dark"] ::-webkit-scrollbar,
+html[data-theme="dark"] ::-webkit-scrollbar,
+body[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track,
+html[data-theme="dark"] ::-webkit-scrollbar-track,
+body[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #2d3748 !important;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb,
+html[data-theme="dark"] ::-webkit-scrollbar-thumb,
+body[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%) !important;
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%) !important;
+}
+</style>
