@@ -667,15 +667,15 @@ CHAINCODE_LANGUAGE="$5"
 echo "Deploying chaincode ${CHAINCODE_NAME} on channel ${CHANNEL_NAME}"
 
 # Set path
-export PATH=${PWD}/../bin:$PATH
-export FABRIC_CFG_PATH=${PWD}/..
+export PATH=${PWD}/bin:$PATH
+export FABRIC_CFG_PATH=${PWD}
 
 # Function to set globals for Authority peer
 setGlobalsForPeer0Authority() {
     export CORE_PEER_TLS_ENABLED=true
     export CORE_PEER_LOCALMSPID="AuthorityMSP"
-    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/../organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt
-    export CORE_PEER_MSPCONFIGPATH=${PWD}/../organizations/peerOrganizations/authority.bki.com/users/Admin@authority.bki.com/msp
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/authority.bki.com/users/Admin@authority.bki.com/msp
     export CORE_PEER_ADDRESS=localhost:7051
 }
 
@@ -683,8 +683,8 @@ setGlobalsForPeer0Authority() {
 setGlobalsForPeer0ShipOwner() {
     export CORE_PEER_TLS_ENABLED=true
     export CORE_PEER_LOCALMSPID="ShipOwnerMSP"
-    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/../organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt
-    export CORE_PEER_MSPCONFIGPATH=${PWD}/../organizations/peerOrganizations/shipowner.bki.com/users/Admin@shipowner.bki.com/msp
+    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/shipowner.bki.com/users/Admin@shipowner.bki.com/msp
     export CORE_PEER_ADDRESS=localhost:9051
 }
 
@@ -736,7 +736,7 @@ echo "Approving chaincode for Authority..."
 setGlobalsForPeer0Authority
 peer lifecycle chaincode approveformyorg -o localhost:7050 \
     --ordererTLSHostnameOverride orderer.bki.com \
-    --tls --cafile "${PWD}/../organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
+    --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
     --channelID ${CHANNEL_NAME} \
     --name ${CHAINCODE_NAME} \
     --version ${CHAINCODE_VERSION} \
@@ -753,7 +753,7 @@ echo "Approving chaincode for ShipOwner..."
 setGlobalsForPeer0ShipOwner
 peer lifecycle chaincode approveformyorg -o localhost:7050 \
     --ordererTLSHostnameOverride orderer.bki.com \
-    --tls --cafile "${PWD}/../organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
+    --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
     --channelID ${CHANNEL_NAME} \
     --name ${CHAINCODE_NAME} \
     --version ${CHAINCODE_VERSION} \
@@ -782,13 +782,13 @@ echo "Committing chaincode..."
 setGlobalsForPeer0Authority
 peer lifecycle chaincode commit -o localhost:7050 \
     --ordererTLSHostnameOverride orderer.bki.com \
-    --tls --cafile "${PWD}/../organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
+    --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
     --channelID ${CHANNEL_NAME} \
     --name ${CHAINCODE_NAME} \
     --peerAddresses localhost:7051 \
-    --tlsRootCertFiles "${PWD}/../organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt" \
+    --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt" \
     --peerAddresses localhost:9051 \
-    --tlsRootCertFiles "${PWD}/../organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt" \
+    --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt" \
     --version ${CHAINCODE_VERSION} \
     --sequence 1
 
