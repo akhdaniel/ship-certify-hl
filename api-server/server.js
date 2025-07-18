@@ -40,7 +40,7 @@ app.use(limiter);
 
 // Fabric network configuration
 const ccpPath = path.resolve(__dirname, 'connection-tls.json');
-const walletPath = path.join(process.cwd(), 'wallet');
+const walletPath = path.join(__dirname, 'wallet');
 const channelName = 'bkichannel';
 const chaincodeName = 'shipCertify';
 
@@ -105,7 +105,7 @@ class FabricService {
                 wallet: this.wallet,
                 identity: userId,
                 discovery: { 
-                    enabled: true, 
+                    enabled: false, 
                     asLocalhost: true 
                 },
                 eventHandlerOptions: {
