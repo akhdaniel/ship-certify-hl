@@ -4,6 +4,12 @@ const { Contract } = require('fabric-contract-api');
 
 class ShipCertifyContract extends Contract {
 
+    // Helper function to get deterministic timestamp
+    getTxTimestamp(ctx) {
+        const timestamp = ctx.stub.getTxTimestamp();
+        return new Date(timestamp.seconds * 1000 + Math.floor(timestamp.nanos / 1000000)).toISOString();
+    }
+
     async initLedger(ctx) {
         console.info('============= START : Initialize Ledger ===========');
         
@@ -15,7 +21,7 @@ class ShipCertifyContract extends Contract {
                 name: 'BKI Authority Jakarta',
                 isActive: true,
                 registeredBy: 'system',
-                registeredAt: new Date().toISOString()
+                registeredAt: this.getTxTimestamp(ctx)
             }
         ];
 
@@ -45,7 +51,7 @@ class ShipCertifyContract extends Contract {
             isActive: true,
             docType: 'authority',
             registeredBy: identity,
-            registeredAt: new Date().toISOString()
+            registeredAt: this.getTxTimestamp(ctx)
         };
 
         await ctx.stub.putState(authorityId, Buffer.from(JSON.stringify(authority)));
@@ -68,7 +74,7 @@ class ShipCertifyContract extends Contract {
             isActive: true,
             docType: 'shipowner',
             registeredBy: identity,
-            registeredAt: new Date().toISOString()
+            registeredAt: this.getTxTimestamp(ctx)
         };
 
         await ctx.stub.putState(shipOwnerId, Buffer.from(JSON.stringify(shipOwner)));
@@ -102,7 +108,7 @@ class ShipCertifyContract extends Contract {
             status: 'registered',
             docType: 'vessel',
             registeredBy: identity,
-            registeredAt: new Date().toISOString()
+            registeredAt: this.getTxTimestamp(ctx)
         };
 
         await ctx.stub.putState(vesselId, Buffer.from(JSON.stringify(vessel)));
@@ -134,7 +140,7 @@ class ShipCertifyContract extends Contract {
             status: 'scheduled', // 'scheduled', 'in-progress', 'completed'
             docType: 'survey',
             scheduledBy: identity,
-            scheduledAt: new Date().toISOString(),
+            scheduledAt: this.getTxTimestamp(ctx),
             findings: []
         };
 
@@ -161,7 +167,7 @@ class ShipCertifyContract extends Contract {
         }
 
         survey.status = 'in-progress';
-        survey.startedAt = new Date().toISOString();
+        survey.startedAt = this.getTxTimestamp(ctx);
         survey.startedBy = identity;
 
         await ctx.stub.putState(surveyId, Buffer.from(JSON.stringify(survey)));
@@ -196,7 +202,7 @@ class ShipCertifyContract extends Contract {
             requirement: requirement,
             status: 'open', // 'open', 'resolved', 'verified'
             addedBy: identity,
-            addedAt: new Date().toISOString()
+            addedAt: this.getTxTimestamp(ctx)
         };
 
         survey.findings.push(finding);
@@ -234,7 +240,7 @@ class ShipCertifyContract extends Contract {
         finding.resolutionDescription = resolutionDescription;
         finding.evidenceUrl = evidenceUrl;
         finding.resolvedBy = identity;
-        finding.resolvedAt = new Date().toISOString();
+        finding.resolvedAt = this.getTxTimestamp(ctx);
 
         await ctx.stub.putState(surveyId, Buffer.from(JSON.stringify(survey)));
         return JSON.stringify(finding);
@@ -267,7 +273,7 @@ class ShipCertifyContract extends Contract {
         finding.status = 'verified';
         finding.verificationNotes = verificationNotes;
         finding.verifiedBy = identity;
-        finding.verifiedAt = new Date().toISOString();
+        finding.verifiedAt = this.getTxTimestamp(ctx);
 
         await ctx.stub.putState(surveyId, Buffer.from(JSON.stringify(survey)));
         return JSON.stringify(finding);
@@ -312,13 +318,13 @@ class ShipCertifyContract extends Contract {
             status: 'active',
             docType: 'certificate',
             issuedBy: identity,
-            issuedAt: new Date().toISOString(),
+            issuedAt: this.getTxTimestamp(ctx),
             hash: this.generateCertificateHash(certificateId, vesselId, validFrom, validTo)
         };
 
         // Update survey status
         survey.status = 'completed';
-        survey.completedAt = new Date().toISOString();
+        survey.completedAt = this.getTxTimestamp(ctx);
         survey.certificateId = certificateId;
 
         await ctx.stub.putState(surveyId, Buffer.from(JSON.stringify(survey)));
