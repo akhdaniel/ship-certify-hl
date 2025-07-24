@@ -21,7 +21,7 @@ class ShipCertifyContract extends Contract {
 
         for (let i = 0; i < authorities.length; i++) {
             authorities[i].docType = 'authority';
-            await ctx.stub.putState('AUTH' + i, Buffer.from(JSON.stringify(authorities[i])));
+            await ctx.stub.putState(authorities[i].id, Buffer.from(JSON.stringify(authorities[i])));
             console.info('Added <--> ', authorities[i]);
         }
         
