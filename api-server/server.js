@@ -38,7 +38,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Fabric network configuration
+// Fabric network configuration  
 const ccpPath = path.resolve(__dirname, 'connection-tls.json');
 const walletPath = path.join(__dirname, 'wallet');
 const channelName = 'bkichannel';
@@ -64,8 +64,12 @@ class FabricService {
     async enrollAdmin() {
         try {
             // Read admin certificates from cryptogen output
-            const adminCertPath = path.resolve(__dirname, '..', 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'signcerts');
-            const adminKeyPath = path.resolve(__dirname, '..', 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'keystore');
+            // Check if running in container (Docker) or on host
+            const isContainer = fs.existsSync('/app/organizations');
+            const baseDir = isContainer ? '/app' : path.resolve(__dirname, '..');
+            
+            const adminCertPath = path.resolve(baseDir, 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'signcerts');
+            const adminKeyPath = path.resolve(baseDir, 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'keystore');
             
             const certFiles = fs.readdirSync(adminCertPath);
             const keyFiles = fs.readdirSync(adminKeyPath);
