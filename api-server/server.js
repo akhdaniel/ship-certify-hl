@@ -106,7 +106,7 @@ class FabricService {
                 identity: userId,
                 discovery: { 
                     enabled: false, 
-                    asLocalhost: true 
+                    asLocalhost: false 
                 },
                 eventHandlerOptions: {
                     strategy: null
