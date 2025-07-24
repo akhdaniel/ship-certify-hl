@@ -182,13 +182,20 @@ class FabricService {
             console.log('Connection profile peers:', Object.keys(ccp.peers || {}));
             
             this.gateway = new Gateway();
+            
+            // Adjust discovery settings based on environment
+            const isContainer = fs.existsSync('/app/organizations');
+            const discoveryOptions = {
+                enabled: true,
+                asLocalhost: !isContainer  // true for host mode, false for container mode
+            };
+            
+            console.log('Discovery settings:', discoveryOptions);
+            
             await this.gateway.connect(ccp, {
                 wallet: this.wallet,
                 identity: userId,
-                discovery: { 
-                    enabled: false, 
-                    asLocalhost: false 
-                },
+                discovery: discoveryOptions,
                 eventHandlerOptions: {
                     strategy: null
                 },
