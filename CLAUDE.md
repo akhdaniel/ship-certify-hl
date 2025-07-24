@@ -92,7 +92,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Working with Hyperledger Fabric
 - Always start network before API server: `cd /root/ship-certify-hl && ./network.sh up`
-- Connection profile path: `/root/ship-certify-hl/api-server/connection-tls.json`
+- **Dynamic connection profile**: API server auto-detects environment and configures paths:
+  - Container mode: `/app/organizations/` with Docker hostnames (`peer0.authority.bki.com`)
+  - Host mode: `/root/ship-certify-hl/organizations/` with localhost addresses
 - Wallet stored in: `/root/ship-certify-hl/api-server/wallet/`
 - Organizations crypto: `/root/ship-certify-hl/organizations/`
 - Admin user auto-enrolled from cryptogen certificates

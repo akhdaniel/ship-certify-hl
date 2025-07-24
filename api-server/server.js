@@ -61,12 +61,86 @@ class FabricService {
         }
     }
 
+    generateConnectionProfile() {
+        // Detect environment and set appropriate paths
+        const isContainer = fs.existsSync('/app/organizations');
+        const basePath = isContainer ? '/app' : '/root/ship-certify-hl';
+        const environment = isContainer ? 'container' : 'host';
+        
+        // For container: use Docker hostnames, for host: use localhost
+        const peerHostname = isContainer ? 'peer0.authority.bki.com' : 'localhost';
+        const shipownerHostname = isContainer ? 'peer0.shipowner.bki.com' : 'localhost';
+        const ordererHostname = isContainer ? 'orderer.bki.com' : 'localhost';
+        
+        return {
+            environment,
+            basePath,
+            name: "bki-network-authority",
+            version: "1.0.0",
+            client: {
+                organization: "AuthorityMSP",
+                connection: {
+                    timeout: {
+                        peer: {
+                            endorser: "300"
+                        },
+                        orderer: "300"
+                    }
+                }
+            },
+            organizations: {
+                AuthorityMSP: {
+                    mspid: "AuthorityMSP",
+                    peers: ["peer0.authority.bki.com"]
+                },
+                ShipOwnerMSP: {
+                    mspid: "ShipOwnerMSP",
+                    peers: ["peer0.shipowner.bki.com"]
+                }
+            },
+            peers: {
+                "peer0.authority.bki.com": {
+                    url: `grpcs://${peerHostname}:7051`,
+                    tlsCACerts: {
+                        path: `${basePath}/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt`
+                    },
+                    grpcOptions: {
+                        "ssl-target-name-override": "peer0.authority.bki.com",
+                        "hostnameOverride": "peer0.authority.bki.com"
+                    }
+                },
+                "peer0.shipowner.bki.com": {
+                    url: `grpcs://${shipownerHostname}:9051`,
+                    tlsCACerts: {
+                        path: `${basePath}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt`
+                    },
+                    grpcOptions: {
+                        "ssl-target-name-override": "peer0.shipowner.bki.com",
+                        "hostnameOverride": "peer0.shipowner.bki.com"
+                    }
+                }
+            },
+            orderers: {
+                "orderer.bki.com": {
+                    url: `grpcs://${ordererHostname}:7050`,
+                    tlsCACerts: {
+                        path: `${basePath}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt`
+                    },
+                    grpcOptions: {
+                        "ssl-target-name-override": "orderer.bki.com",
+                        "hostnameOverride": "orderer.bki.com"
+                    }
+                }
+            }
+        };
+    }
+
     async enrollAdmin() {
         try {
             // Read admin certificates from cryptogen output
             // Check if running in container (Docker) or on host
             const isContainer = fs.existsSync('/app/organizations');
-            const baseDir = isContainer ? '/app' : path.resolve(__dirname, '..');
+            const baseDir = isContainer ? '/app' : '/root/ship-certify-hl';
             
             const adminCertPath = path.resolve(baseDir, 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'signcerts');
             const adminKeyPath = path.resolve(baseDir, 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'keystore');
@@ -99,9 +173,12 @@ class FabricService {
 
     async connectToNetwork(userId = 'admin') {
         try {
-            const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
+            // Generate dynamic connection profile based on environment
+            const ccp = this.generateConnectionProfile();
             
-            console.log('Using connection profile with absolute paths');
+            console.log('Using dynamic connection profile');
+            console.log('Environment:', ccp.environment);
+            console.log('Base path:', ccp.basePath);
             console.log('Connection profile peers:', Object.keys(ccp.peers || {}));
             
             this.gateway = new Gateway();
