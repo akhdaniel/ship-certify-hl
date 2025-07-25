@@ -239,8 +239,11 @@ class FabricService {
                     const transaction = this.contract.createTransaction(functionName);
                     
                     // For chaincode that requires endorsements from both organizations,
-                    // specify the endorsing peers explicitly
-                    transaction.setEndorsingPeers(['peer0.authority.bki.com', 'peer0.shipowner.bki.com']);
+                    // specify the endorsing peers explicitly based on environment
+                    const isContainer = fs.existsSync('/app/organizations');
+                    const authorityPeer = isContainer ? 'peer0.authority.bki.com' : 'localhost:7051';
+                    const shipownerPeer = isContainer ? 'peer0.shipowner.bki.com' : 'localhost:9051';
+                    transaction.setEndorsingPeers([authorityPeer, shipownerPeer]);
                     
                     // Submit transaction with endorsement requirements
                     const result = await transaction.submit(...args);
