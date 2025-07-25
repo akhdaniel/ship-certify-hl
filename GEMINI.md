@@ -6,6 +6,36 @@ This project is a comprehensive blockchain application for managing ship certifi
 
 The application defines clear roles and permissions for different participants in the network, including a central `Authority` (representing BKI) and `ShipOwner` organizations. Public users also have read-only access to certain data.
 
+
+## Development Commands
+
+### System Location
+- **Project Path**: `/root/ship-certify-hl/`
+- **Working Directory**: Always run commands from `/root/ship-certify-hl/`
+
+### Network Management
+- `cd /root/ship-certify-hl && ./network.sh generateCerts` - Generate crypto materials for organizations
+- `cd /root/ship-certify-hl && ./network.sh up` - Start the Hyperledger Fabric network
+- `cd /root/ship-certify-hl && ./network.sh down` - Stop the network
+- `cd /root/ship-certify-hl && ./network.sh createChannel` - Create and join channel
+- `cd /root/ship-certify-hl && ./network.sh deployCC` - Deploy chaincode
+- `cd /root/ship-certify-hl && ./network.sh clean` - Full cleanup of containers and volumes
+
+### Application Development
+- `cd /root/ship-certify-hl && npm run install:all` - Install dependencies for all components
+- `cd /root/ship-certify-hl && npm run start:dev` - Start both API server and frontend in development
+- `cd /root/ship-certify-hl && npm run api:start` - Start API server only
+- `cd /root/ship-certify-hl && npm run frontend:start` - Start frontend development server
+- `cd /root/ship-certify-hl && npm run frontend:build` - Build frontend for production
+- `cd /root/ship-certify-hl && npm run deploy` - Deploy full system with Docker
+
+### Ubuntu Server Specific
+- Check system status: `systemctl status docker`
+- View logs: `docker compose logs -f api-server`
+- Monitor containers: `docker ps -a`
+- Check disk space: `df -h` (blockchain data can grow large)
+
+
 ## System Architecture
 
 The architecture is composed of three main components:
