@@ -91,11 +91,11 @@ class FabricService {
             organizations: {
                 AuthorityMSP: {
                     mspid: "AuthorityMSP",
-                    peers: ["peer0.authority.bki.com", "peer0.shipowner.bki.com"]
+                    peers: ["peer0.authority.bki.com"]
                 },
                 ShipOwnerMSP: {
                     mspid: "ShipOwnerMSP",
-                    peers: ["peer0.shipowner.bki.com", "peer0.authority.bki.com"]
+                    peers: ["peer0.shipowner.bki.com"]
                 }
             },
             peers: {
