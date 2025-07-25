@@ -151,6 +151,7 @@ services:
       - bki
 
   api-server:
+    restart: always
     container_name: api-server
     build:
       context: ./api-server
