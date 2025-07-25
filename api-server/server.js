@@ -186,7 +186,7 @@ class FabricService {
             // Adjust discovery settings based on environment
             const isContainer = fs.existsSync('/app/organizations');
             const discoveryOptions = {
-                enabled: false,  // Disable discovery to avoid access denied errors
+                enabled: true,   // Enable discovery for proper endorsement strategy
                 asLocalhost: !isContainer  // true for host mode, false for container mode
             };
             
@@ -235,8 +235,15 @@ class FabricService {
             
             while (retries > 0) {
                 try {
-                    // Use the contract to submit transaction
-                    const result = await this.contract.submitTransaction(functionName, ...args);
+                    // Create transaction proposal with explicit endorsement strategy
+                    const transaction = this.contract.createTransaction(functionName);
+                    
+                    // For chaincode that requires endorsements from both organizations,
+                    // specify the endorsing peers explicitly
+                    transaction.setEndorsingPeers(['peer0.authority.bki.com', 'peer0.shipowner.bki.com']);
+                    
+                    // Submit transaction with endorsement requirements
+                    const result = await transaction.submit(...args);
                     console.log(`Transaction result:`, result.toString());
                     
                     if (result.toString().trim() === '') {
@@ -250,7 +257,8 @@ class FabricService {
                     
                     if (error.message.includes('No valid responses') || 
                         error.message.includes('connection error') ||
-                        error.message.includes('UNAVAILABLE')) {
+                        error.message.includes('UNAVAILABLE') ||
+                        error.message.includes('endorsement policy failure')) {
                         retries--;
                         if (retries > 0) {
                             console.log(`Retrying in 2 seconds... (${retries} attempts left)`);
@@ -300,7 +308,12 @@ class FabricService {
         try {
             console.log(`Evaluating transaction: ${functionName} with args:`, args);
             
-            const result = await this.contract.evaluateTransaction(functionName, ...args);
+            // Create transaction for evaluation (read-only, no endorsement needed)
+            const transaction = this.contract.createTransaction(functionName);
+            
+            // For queries, we can use any single peer since it's read-only
+            // This avoids unnecessary endorsement complexity for read operations
+            const result = await transaction.evaluate(...args);
             console.log(`Raw result length: ${result.length}, content:`, result.toString());
             
             const resultString = result.toString();
