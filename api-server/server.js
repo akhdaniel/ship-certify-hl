@@ -421,25 +421,42 @@ app.use(authMiddleware);
 // ===================== Auth Routes =====================
 
 app.post('/api/login', asyncHandler(async (req, res) => {
+  console.log('[LOGIN] Incoming login request:', req.body);
   const { username, password } = req.body;
   if (!username || !password) {
+    console.warn('[LOGIN] Missing username or password');
     return res.status(400).json({ error: 'Username and password are required' });
   }
   const user = findUser(username);
+  console.log('[LOGIN] User lookup result:', user);
   if (!user) {
+    console.warn('[LOGIN] User not found:', username);
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    console.log('[LOGIN] Password compare result:', valid);
+    if (!valid) {
+      console.warn('[LOGIN] Invalid password for user:', username);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+  } catch (err) {
+    console.error('[LOGIN] Error during bcrypt.compare:', err);
+    return res.status(500).json({ error: 'Internal error during password check' });
   }
   // Issue JWT
-  const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
-  res.json({
-    success: true,
-    token,
-    user: { id: user.id, username: user.username, role: user.role, name: user.name }
-  });
+  try {
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+    console.log('[LOGIN] JWT issued successfully');
+    res.json({
+      success: true,
+      token,
+      user: { id: user.id, username: user.username, role: user.role, name: user.name }
+    });
+  } catch (err) {
+    console.error('[LOGIN] Error during jwt.sign:', err);
+    return res.status(500).json({ error: 'Internal error during token generation' });
+  }
 }));
 
 // ===================== API Routes =====================
