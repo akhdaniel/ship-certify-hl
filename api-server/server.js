@@ -187,8 +187,8 @@ class FabricService {
             // Adjust discovery settings based on environment
             const isContainer = fs.existsSync('/app/organizations');
             const discoveryOptions = {
-                enabled: false,  // Disable discovery, use manual endorsement strategy
-                asLocalhost: !isContainer  // true for host mode, false for container mode
+                enabled: true,
+                asLocalhost: !isContainer
             };
             
             console.log('Discovery settings:', discoveryOptions);
