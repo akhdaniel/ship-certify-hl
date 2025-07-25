@@ -5,6 +5,7 @@ CHAINCODE_NAME="$2"
 CHAINCODE_PATH="$3"
 CHAINCODE_VERSION="$4"
 CHAINCODE_LANGUAGE="$5"
+CHAINCODE_SEQUENCE="$6"
 
 echo "Deploying chaincode ${CHAINCODE_NAME} on channel ${CHANNEL_NAME}"
 
@@ -83,7 +84,8 @@ peer lifecycle chaincode approveformyorg -o localhost:7050 \
     --name ${CHAINCODE_NAME} \
     --version ${CHAINCODE_VERSION} \
     --package-id ${PACKAGE_ID} \
-    --sequence 1
+    --sequence ${CHAINCODE_SEQUENCE} \
+    --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')"
 
 if [ $? -ne 0 ]; then
     echo "Failed to approve chaincode for Authority"
@@ -100,7 +102,8 @@ peer lifecycle chaincode approveformyorg -o localhost:7050 \
     --name ${CHAINCODE_NAME} \
     --version ${CHAINCODE_VERSION} \
     --package-id ${PACKAGE_ID} \
-    --sequence 1
+    --sequence ${CHAINCODE_SEQUENCE} \
+    --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')"
 
 if [ $? -ne 0 ]; then
     echo "Failed to approve chaincode for ShipOwner"
@@ -116,7 +119,7 @@ peer lifecycle chaincode checkcommitreadiness \
     --channelID ${CHANNEL_NAME} \
     --name ${CHAINCODE_NAME} \
     --version ${CHAINCODE_VERSION} \
-    --sequence 1 \
+    --sequence ${CHAINCODE_SEQUENCE} \
     --output json
 
 # Commit chaincode
@@ -132,7 +135,8 @@ peer lifecycle chaincode commit -o localhost:7050 \
     --peerAddresses localhost:9051 \
     --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt" \
     --version ${CHAINCODE_VERSION} \
-    --sequence 1
+    --sequence ${CHAINCODE_SEQUENCE} \
+    --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')"
 
 if [ $? -ne 0 ]; then
     echo "Failed to commit chaincode"

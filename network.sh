@@ -11,6 +11,7 @@ CHANNEL_NAME="bkichannel"
 CHAINCODE_NAME="shipCertify"
 CHAINCODE_PATH="./chaincode-javascript"
 CHAINCODE_VERSION="1"
+CHAINCODE_SEQUENCE="1"
 CHAINCODE_LANGUAGE="node"
 
 # Colors for output
@@ -648,7 +649,7 @@ function deployCC() {
     fi
     
     # Deploy chaincode
-    ./scripts/deployCC.sh ${CHANNEL_NAME} ${CHAINCODE_NAME} ${CHAINCODE_PATH} ${CHAINCODE_VERSION} ${CHAINCODE_LANGUAGE}
+    ./scripts/deployCC.sh ${CHANNEL_NAME} ${CHAINCODE_NAME} ${CHAINCODE_PATH} ${CHAINCODE_VERSION} ${CHAINCODE_LANGUAGE} ${CHAINCODE_SEQUENCE}
 }
 
 function createDeployCCScript() {
