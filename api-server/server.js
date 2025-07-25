@@ -124,6 +124,7 @@ class FabricService {
                 "orderer.bki.com": {
                     url: `grpcs://${ordererHostname}:7050`,
                     tlsCACerts: {
+                        // IMPORTANT: Use the orderer's CA, not a peer's CA
                         path: `${basePath}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt`
                     },
                     grpcOptions: {
