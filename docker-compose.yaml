@@ -165,6 +165,7 @@ services:
     volumes:
       - ./organizations:/app/organizations
       - ./frontend/dist:/app/frontend/dist
+      - ./api-server/users.json:/app/users.json  # Add this line      
     depends_on:
       - peer0.authority.bki.com
       - peer0.shipowner.bki.com
