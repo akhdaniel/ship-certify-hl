@@ -299,7 +299,7 @@ class FabricService {
     async evaluateTransaction(functionName, ...args) {
         try {
             console.log(`Evaluating transaction: ${functionName} with args:`, args);
-            console.log(`Using contract:`, this.contract.getContractName());
+            console.log(`Using contract:`, this.contract.getChaincodeId());
             console.log(`On channel:`, this.contract.getNetwork().getName());
             
             const result = await this.contract.evaluateTransaction(functionName, ...args);
