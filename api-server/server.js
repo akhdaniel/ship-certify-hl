@@ -235,17 +235,11 @@ class FabricService {
             
             while (retries > 0) {
                 try {
-                    // Create transaction proposal with explicit endorsement strategy
+                    // Create transaction proposal with automatic endorsement discovery
                     const transaction = this.contract.createTransaction(functionName);
                     
-                    // For chaincode that requires endorsements from both organizations,
-                    // specify the endorsing peers explicitly based on environment
-                    const isContainer = fs.existsSync('/app/organizations');
-                    const authorityPeer = isContainer ? 'peer0.authority.bki.com' : 'localhost:7051';
-                    const shipownerPeer = isContainer ? 'peer0.shipowner.bki.com' : 'localhost:9051';
-                    transaction.setEndorsingPeers([authorityPeer, shipownerPeer]);
-                    
-                    // Submit transaction with endorsement requirements
+                    // Let the SDK automatically discover and use appropriate endorsing peers
+                    // based on the chaincode endorsement policy (requires both orgs)
                     const result = await transaction.submit(...args);
                     console.log(`Transaction result:`, result.toString());
                     
