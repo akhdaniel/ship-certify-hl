@@ -1,2 +1,2 @@
 Installed chaincodes on peer:
-Package ID: shipCertify_1:ddeb7bab1483c20bab191a465d76b2ef69de89d8d31d2b2285ad23d9c6dd54e8, Label: shipCertify_1
+Package ID: shipCertify_1:aa23f7c965bdf721b639881a84c4c46a6435545b210b466d8d089b5c6e775c97, Label: shipCertify_1
