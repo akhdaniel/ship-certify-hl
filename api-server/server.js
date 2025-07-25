@@ -358,10 +358,18 @@ const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-// Helper: Load users from file
+// Helper: Load users from file with error handling
 function loadUsers() {
-  if (!fs.existsSync(USERS_FILE)) return [];
-  return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+  try {
+    if (!fs.existsSync(USERS_FILE)) {
+      console.warn(`[WARN] users.json not found at ${USERS_FILE}`);
+      return [];
+    }
+    return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+  } catch (err) {
+    console.error(`[ERROR] Failed to load users.json:`, err);
+    return [];
+  }
 }
 
 // Helper: Find user by username/email
