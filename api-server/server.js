@@ -91,11 +91,11 @@ class FabricService {
             organizations: {
                 AuthorityMSP: {
                     mspid: "AuthorityMSP",
-                    peers: ["peer0.authority.bki.com"]
+                    peers: ["peer0.authority.bki.com", "peer0.shipowner.bki.com"]
                 },
                 ShipOwnerMSP: {
                     mspid: "ShipOwnerMSP",
-                    peers: ["peer0.shipowner.bki.com"]
+                    peers: ["peer0.shipowner.bki.com", "peer0.authority.bki.com"]
                 }
             },
             peers: {
@@ -186,7 +186,7 @@ class FabricService {
             // Adjust discovery settings based on environment
             const isContainer = fs.existsSync('/app/organizations');
             const discoveryOptions = {
-                enabled: true,   // Enable discovery for proper endorsement strategy
+                enabled: false,  // Disable discovery, use manual endorsement strategy
                 asLocalhost: !isContainer  // true for host mode, false for container mode
             };
             
@@ -235,12 +235,8 @@ class FabricService {
             
             while (retries > 0) {
                 try {
-                    // Create transaction proposal with automatic endorsement discovery
-                    const transaction = this.contract.createTransaction(functionName);
-                    
-                    // Let the SDK automatically discover and use appropriate endorsing peers
-                    // based on the chaincode endorsement policy (requires both orgs)
-                    const result = await transaction.submit(...args);
+                    // Use simple submitTransaction for endorsement policy compliance
+                    const result = await this.contract.submitTransaction(functionName, ...args);
                     console.log(`Transaction result:`, result.toString());
                     
                     if (result.toString().trim() === '') {
