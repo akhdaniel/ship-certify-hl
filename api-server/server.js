@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { Gateway, Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');
+const asyncHandler = require('express-async-handler');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
