@@ -163,6 +163,7 @@ services:
       - HOST=0.0.0.0
       - PORT=3000
       - DEBUG=fabric*   # <--- add this line
+    command: /bin/bash -c "node enrollUsers.js && node server.js"
     volumes:
       - ./organizations:/app/organizations
       - ./frontend/dist:/app/frontend/dist

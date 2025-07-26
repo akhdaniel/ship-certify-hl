@@ -260,7 +260,8 @@ const formatDate = (dateString) => {
 const loadCertificates = async () => {
   try {
     loading.value = true
-    const response = await certificateApi.getAll()
+    const apiCall = userStore.isShipOwner() ? certificateApi.getMy : certificateApi.getAll;
+    const response = await apiCall();
     certificates.value = response.data?.map(item => ({
       ...item.Record,
       key: item.Key

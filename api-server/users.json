@@ -1,6 +1,6 @@
 [
   {
-    "id": "AUTH001",
+    "id": "Admin@authority.bki.com",
     "username": "authority",
     "email": "authority@bki.com",
     "name": "BKI Authority Jakarta",
@@ -8,11 +8,12 @@
     "passwordHash": "$2b$10$ac5haQ6Qp5TRXDlDv.sfWOpDVh3MO8UQXXvzxyf6dJjHKCm3mciJi"
   },
   {
-    "id": "SHIP001",
+    "id": "User1@shipowner.bki.com",
     "username": "shipowner",
     "email": "shipowner@bki.com",
     "name": "PT Kapal Makmur",
     "role": "shipowner",
+    "shipOwnerId": "User1@shipowner.bki.com",
     "passwordHash": "$2b$10$uKC0jggnb4pU2JpiiD0Qh.TmqyiDhRrqpV027pf63zUZV5T5nDYUy"
   }
 ] 

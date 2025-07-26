@@ -228,7 +228,8 @@ const filteredVessels = computed(() => {
 const loadVessels = async () => {
   try {
     loading.value = true
-    const response = await vesselApi.getAll()
+    const apiCall = userStore.isShipOwner() ? vesselApi.getMy : vesselApi.getAll;
+    const response = await apiCall();
     vessels.value = response.data?.map(item => ({
       ...item.Record,
       key: item.Key

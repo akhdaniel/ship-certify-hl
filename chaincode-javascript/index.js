@@ -226,6 +226,19 @@ class ShipCertifyContract extends Contract {
         }
 
         const survey = JSON.parse(surveyBytes.toString());
+
+        // Security check: Ensure only the vessel owner can resolve the finding
+        if (mspId === 'ShipOwnerMSP') {
+            const vesselBytes = await ctx.stub.getState(survey.vesselId);
+            if (!vesselBytes || vesselBytes.length === 0) {
+                throw new Error(`Vessel ${survey.vesselId} not found`);
+            }
+            const vessel = JSON.parse(vesselBytes.toString());
+            if (!identity.includes(vessel.shipOwnerId)) {
+                throw new Error(`Caller (${identity}) is not the owner of vessel ${survey.vesselId}`);
+            }
+        }
+        
         const finding = survey.findings.find(f => f.id === findingId);
         
         if (!finding) {
@@ -548,6 +561,30 @@ class ShipCertifyContract extends Contract {
             }
         }
         return JSON.stringify(allFindings);
+    }
+
+    async queryMySurveys(ctx) {
+        const myVesselsString = await this.queryMyVessels(ctx);
+        const myVessels = JSON.parse(myVesselsString);
+        const myVesselIds = myVessels.map(v => v.Key);
+
+        const allSurveysString = await this.queryAllSurveys(ctx);
+        const allSurveys = JSON.parse(allSurveysString);
+
+        const mySurveys = allSurveys.filter(s => myVesselIds.includes(s.Record.vesselId));
+        return JSON.stringify(mySurveys);
+    }
+
+    async queryMyCertificates(ctx) {
+        const myVesselsString = await this.queryMyVessels(ctx);
+        const myVessels = JSON.parse(myVesselsString);
+        const myVesselIds = myVessels.map(v => v.Key);
+
+        const allCertificatesString = await this.queryAllCertificates(ctx);
+        const allCertificates = JSON.parse(allCertificatesString);
+
+        const myCertificates = allCertificates.filter(c => myVesselIds.includes(c.Record.vesselId));
+        return JSON.stringify(myCertificates);
     }
 }
 

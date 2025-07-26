@@ -22,7 +22,7 @@ PeerOrgs:
         - 127.0.0.1
         - "{{.Hostname}}.authority.bki.com"
     Users:
-      Count: 1
+      Count: 2
 
   - Name: ShipOwner
     Domain: shipowner.bki.com
@@ -35,4 +35,4 @@ PeerOrgs:
         - 127.0.0.1
         - "{{.Hostname}}.shipowner.bki.com"
     Users:
-      Count: 1
+      Count: 2

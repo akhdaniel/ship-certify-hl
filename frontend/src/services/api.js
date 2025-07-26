@@ -47,6 +47,7 @@ export const surveyApi = {
   getAll: () => api.get('/surveys'),
   create: (data) => api.post('/surveys', data),
   start: (id) => api.put(`/surveys/${id}/start`),
+  getMy: () => api.get('/surveys/my'),
 }
 
 export const findingApi = {
@@ -64,6 +65,7 @@ export const certificateApi = {
   getById: (id) => api.get(`/certificates/${id}`),
   create: (data) => api.post('/certificates', data),
   verify: (id) => api.get(`/certificates/${id}/verify`),
+  getMy: () => api.get('/certificates/my'),
 }
 
 export const shipOwnerApi = {

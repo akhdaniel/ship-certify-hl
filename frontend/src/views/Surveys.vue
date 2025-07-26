@@ -255,7 +255,8 @@ const formatDate = (dateString) => {
 const loadSurveys = async () => {
   try {
     loading.value = true
-    const response = await surveyApi.getAll()
+    const apiCall = userStore.isShipOwner() ? surveyApi.getMy : surveyApi.getAll;
+    const response = await apiCall();
     surveys.value = response.data?.map(item => ({
       ...item.Record,
       key: item.Key

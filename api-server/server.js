@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { Gateway, Wallets } = require('fabric-network');
-const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
@@ -39,7 +38,6 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Fabric network configuration  
-const ccpPath = path.resolve(__dirname, 'connection-tls.json');
 const walletPath = path.join(__dirname, 'wallet');
 const channelName = 'bkichannel';
 const chaincodeName = 'shipCertify';
@@ -53,169 +51,66 @@ class FabricService {
 
     async initializeWallet() {
         this.wallet = await Wallets.newFileSystemWallet(walletPath);
-        
-        // Check if admin user exists
-        const adminExists = await this.wallet.get('admin');
-        if (!adminExists) {
-            await this.enrollAdmin();
-        }
     }
 
     generateConnectionProfile() {
-        // Detect environment and set appropriate paths
         const isContainer = fs.existsSync('/app/organizations');
         const basePath = isContainer ? '/app' : '/root/ship-certify-hl';
-        const environment = isContainer ? 'container' : 'host';
-        
-        // For container: use Docker hostnames, for host: use localhost
         const peerHostname = isContainer ? 'peer0.authority.bki.com' : 'localhost';
         const shipownerHostname = isContainer ? 'peer0.shipowner.bki.com' : 'localhost';
         const ordererHostname = isContainer ? 'orderer.bki.com' : 'localhost';
         
         return {
-            environment,
-            basePath,
             name: "bki-network-authority",
             version: "1.0.0",
             client: {
                 organization: "AuthorityMSP",
-                connection: {
-                    timeout: {
-                        peer: {
-                            endorser: "300"
-                        },
-                        orderer: "300"
-                    }
-                }
+                connection: { timeout: { peer: { endorser: "300" }, orderer: "300" } }
             },
             organizations: {
-                AuthorityMSP: {
-                    mspid: "AuthorityMSP",
-                    peers: ["peer0.authority.bki.com"]
-                },
-                ShipOwnerMSP: {
-                    mspid: "ShipOwnerMSP",
-                    peers: ["peer0.shipowner.bki.com"]
-                }
+                AuthorityMSP: { mspid: "AuthorityMSP", peers: ["peer0.authority.bki.com"] },
+                ShipOwnerMSP: { mspid: "ShipOwnerMSP", peers: ["peer0.shipowner.bki.com"] }
             },
             peers: {
                 "peer0.authority.bki.com": {
                     url: `grpcs://${peerHostname}:7051`,
-                    tlsCACerts: {
-                        path: `${basePath}/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt`
-                    },
-                    grpcOptions: {
-                        "ssl-target-name-override": "peer0.authority.bki.com",
-                        "hostnameOverride": "peer0.authority.bki.com"
-                    }
+                    tlsCACerts: { path: `${basePath}/organizations/peerOrganizations/authority.bki.com/peers/peer0.authority.bki.com/tls/ca.crt` },
+                    grpcOptions: { "ssl-target-name-override": "peer0.authority.bki.com", "hostnameOverride": "peer0.authority.bki.com" }
                 },
                 "peer0.shipowner.bki.com": {
                     url: `grpcs://${shipownerHostname}:9051`,
-                    tlsCACerts: {
-                        path: `${basePath}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt`
-                    },
-                    grpcOptions: {
-                        "ssl-target-name-override": "peer0.shipowner.bki.com",
-                        "hostnameOverride": "peer0.shipowner.bki.com"
-                    }
+                    tlsCACerts: { path: `${basePath}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt` },
+                    grpcOptions: { "ssl-target-name-override": "peer0.shipowner.bki.com", "hostnameOverride": "peer0.shipowner.bki.com" }
                 }
             },
             orderers: {
                 "orderer.bki.com": {
                     url: `grpcs://${ordererHostname}:7050`,
-                    tlsCACerts: {
-                        // IMPORTANT: Use the orderer's CA, not a peer's CA
-                        path: `${basePath}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt`
-                    },
-                    grpcOptions: {
-                        "ssl-target-name-override": "orderer.bki.com",
-                        "hostnameOverride": "orderer.bki.com"
-                    }
+                    tlsCACerts: { path: `${basePath}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt` },
+                    grpcOptions: { "ssl-target-name-override": "orderer.bki.com", "hostnameOverride": "orderer.bki.com" }
                 }
             }
         };
     }
 
-    async enrollAdmin() {
-        try {
-            // Read admin certificates from cryptogen output
-            // Check if running in container (Docker) or on host
-            const isContainer = fs.existsSync('/app/organizations');
-            const baseDir = isContainer ? '/app' : '/root/ship-certify-hl';
-            
-            const adminCertPath = path.resolve(baseDir, 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'signcerts');
-            const adminKeyPath = path.resolve(baseDir, 'organizations', 'peerOrganizations', 'authority.bki.com', 'users', 'Admin@authority.bki.com', 'msp', 'keystore');
-            
-            const certFiles = fs.readdirSync(adminCertPath);
-            const keyFiles = fs.readdirSync(adminKeyPath);
-            
-            if (certFiles.length === 0 || keyFiles.length === 0) {
-                throw new Error('Admin certificates not found. Run ./network.sh generateCerts first.');
-            }
-            
-            const certificate = fs.readFileSync(path.join(adminCertPath, certFiles[0]), 'utf8');
-            const privateKey = fs.readFileSync(path.join(adminKeyPath, keyFiles[0]), 'utf8');
-            
-            const x509Identity = {
-                credentials: {
-                    certificate: certificate,
-                    privateKey: privateKey,
-                },
-                mspId: 'AuthorityMSP',
-                type: 'X.509',
-            };
-            await this.wallet.put('admin', x509Identity);
-            console.log('Successfully imported admin user from cryptogen certificates');
-        } catch (error) {
-            console.error(`Failed to enroll admin user: ${error}`);
-            throw error;
-        }
-    }
-
     async connectToNetwork(userId = 'admin') {
         try {
-            // Generate dynamic connection profile based on environment
             const ccp = this.generateConnectionProfile();
-            
-            console.log('Using dynamic connection profile');
-            console.log('Environment:', ccp.environment);
-            console.log('Base path:', ccp.basePath);
-            console.log('Connection profile peers:', Object.keys(ccp.peers || {}));
-            
             this.gateway = new Gateway();
-            
-            // Adjust discovery settings based on environment
             const isContainer = fs.existsSync('/app/organizations');
-            const discoveryOptions = {
-                enabled: true,
-                asLocalhost: !isContainer
-            };
-            
-            console.log('Discovery settings:', discoveryOptions);
             
             await this.gateway.connect(ccp, {
                 wallet: this.wallet,
                 identity: userId,
-                discovery: discoveryOptions,
-                eventHandlerOptions: {
-                    strategy: null
-                },
-                queryHandlerOptions: {
-                    timeout: 45
-                }
+                discovery: { enabled: true, asLocalhost: !isContainer },
+                eventHandlerOptions: { strategy: null },
+                queryHandlerOptions: { timeout: 45 }
             });
 
             const network = await this.gateway.getNetwork(channelName);
             this.contract = network.getContract(chaincodeName);
-            
-            console.log('Successfully connected to network and got contract');
-            return this.contract;
         } catch (error) {
-            console.error(`Failed to connect to network: ${error}`);
-            console.error('Error details:', error.message);
-            if (error.stack) {
-                console.error('Stack trace:', error.stack);
-            }
+            console.error(`Failed to connect to network for user ${userId}: ${error}`);
             throw error;
         }
     }
@@ -227,199 +122,38 @@ class FabricService {
     }
 
     async submitTransaction(functionName, ...args) {
-        try {
-            console.log(`Submitting transaction: ${functionName} with args:`, args);
-            
-            // Add retry logic for network issues
-            let retries = 3;
-            let lastError;
-            
-            while (retries > 0) {
-                try {
-                    // Use simple submitTransaction for endorsement policy compliance
-                    const result = await this.contract.submitTransaction(functionName, ...args);
-                    console.log(`Transaction result:`, result.toString());
-                    
-                    if (result.toString().trim() === '') {
-                        return { success: true, message: 'Transaction submitted successfully' };
-                    }
-                    
-                    return JSON.parse(result.toString());
-                } catch (error) {
-                    lastError = error;
-                    console.error(`Transaction attempt failed (${4 - retries}/3):`, error.message);
-                    
-                    if (error.message.includes('No valid responses') || 
-                        error.message.includes('connection error') ||
-                        error.message.includes('UNAVAILABLE') ||
-                        error.message.includes('endorsement policy failure')) {
-                        retries--;
-                        if (retries > 0) {
-                            console.log(`Retrying in 2 seconds... (${retries} attempts left)`);
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                            continue;
-                        }
-                    } else {
-                        // For other errors, don't retry
-                        break;
-                    }
-                }
-            }
-            
-            console.error(`Failed to submit transaction after all retries: ${lastError}`);
-            console.error(`Transaction details:`, {
-                functionName,
-                args,
-                error: lastError.message,
-                responses: lastError.responses || [],
-                errors: lastError.errors || []
-            });
-            
-            // Log more detailed error information
-            if (lastError.responses && lastError.responses.length > 0) {
-                console.error(`Peer responses:`, lastError.responses.map(r => ({
-                    status: r.response?.status,
-                    message: r.response?.message,
-                    peer: r.peer
-                })));
-            }
-            
-            if (lastError.errors && lastError.errors.length > 0) {
-                console.error(`Peer errors:`, lastError.errors.map(e => ({
-                    message: e.message,
-                    peer: e.peer
-                })));
-            }
-            
-            throw lastError;
-        } catch (error) {
-            console.error(`Failed to submit transaction: ${error}`);
-            throw error;
-        }
+        return this.contract.submitTransaction(functionName, ...args);
     }
 
     async evaluateTransaction(functionName, ...args) {
-        try {
-            console.log(`Evaluating transaction: ${functionName} with args:`, args);
-            
-            // Create transaction for evaluation (read-only, no endorsement needed)
-            const transaction = this.contract.createTransaction(functionName);
-            
-            // For queries, we can use any single peer since it's read-only
-            // This avoids unnecessary endorsement complexity for read operations
-            const result = await transaction.evaluate(...args);
-            console.log(`Raw result length: ${result.length}, content:`, result.toString());
-            
-            const resultString = result.toString();
-            if (!resultString || resultString.trim() === '') {
-                console.log('Empty result, returning empty array');
-                return [];
-            }
-            
-            try {
-                const parsed = JSON.parse(resultString);
-                console.log('Successfully parsed result:', parsed);
-                return parsed;
-            } catch (parseError) {
-                console.error('JSON parse error:', parseError);
-                console.error('Attempting to parse:', resultString);
-                return [];
-            }
-        } catch (error) {
-            console.error(`Failed to evaluate transaction ${functionName}:`, error);
-            console.error(`Error details:`, error.details || error.message);
-            
-            // If it's a query that should return an empty array on failure
-            if (functionName.startsWith('queryAll')) {
-                console.log('Query failed, returning empty array for queryAll function');
-                return [];
-            }
-            
-            throw error;
-        }
+        const resultBytes = await this.contract.evaluateTransaction(functionName, ...args);
+        const resultString = resultBytes.toString();
+        return resultString ? JSON.parse(resultString) : [];
     }
 }
 
-const fabricService = new FabricService();
+const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-// Initialize Fabric connection
-async function initializeFabric() {
-    try {
-        await fabricService.initializeWallet();
-        await fabricService.connectToNetwork();
-        console.log('Fabric network connected successfully');
-    } catch (error) {
-        console.error('Failed to initialize Fabric connection:', error);
-        process.exit(1);
-    }
-}
-
-// Initialize Fabric connection
-async function initializeFabric() {
-    try {
-        await fabricService.initializeWallet();
-        await fabricService.connectToNetwork();
-        console.log('Fabric network connected successfully');
-    } catch (error) {
-        console.error('Failed to initialize Fabric connection:', error);
-        process.exit(1);
-    }
-}
-
-// Error handling middleware
-const asyncHandler = (fn) => (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-// Helper: Load users from file with error handling
-function loadUsers() {
-  try {
-    if (!fs.existsSync(USERS_FILE)) {
-      console.warn(`[WARN] users.json not found at ${USERS_FILE}`);
-      return [];
-    }
-    return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-  } catch (err) {
-    console.error(`[ERROR] Failed to load users.json:`, err);
-    return [];
-  }
-}
-
-// Helper: Find user by username/email
 function findUser(username) {
-  const users = loadUsers();
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
   return users.find(u => u.username === username || u.email === username);
 }
 
-// JWT Auth Middleware
 function authMiddleware(req, res, next) {
-  // Allow /api/login and /health
-  if (
-    req.path === '/api/login' ||
-    req.path === '/health' ||
-    (req.method === 'GET' && (
-      req.path.startsWith('/api/vessels') ||
-      req.path.startsWith('/api/certificates') ||
-      req.path.startsWith('/api/shipowners')
-    ))
-  ) {
+  const publicRoutes = ['/api/login', '/health'];
+  if (publicRoutes.includes(req.path) || (req.method === 'GET' && !req.path.includes('/my'))) {
     return next();
   }
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'Missing token' });
-  }
+  const token = (req.headers['authorization'] || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Missing token' });
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
 
-// Role-based access control middleware
 function requireRole(role) {
   return (req, res, next) => {
     if (!req.user || req.user.role !== role) {
@@ -429,292 +163,147 @@ function requireRole(role) {
   };
 }
 
-// Middleware to create a temporary Fabric connection as the logged-in user
 const connectAsUser = asyncHandler(async (req, res, next) => {
-  // Default to admin for unauthenticated or general routes
-  const userId = req.user ? req.user.username : 'admin';
-  
-  const userFabricService = new FabricService();
-  
-  try {
-    await userFabricService.initializeWallet();
-    await userFabricService.connectToNetwork(userId);
-    req.userFabricService = userFabricService; // Attach user-specific service to request
-
-    res.on('finish', async () => {
-      await userFabricService.disconnect();
-    });
-
-    next();
-  } catch (error) {
-    console.error(`Failed to connect as user ${userId}:`, error);
-    res.status(500).json({ error: 'Failed to establish user connection to the network' });
-  }
+  const userId = req.user.shipOwnerId || req.user.username;
+  req.fabricService = new FabricService();
+  await req.fabricService.initializeWallet();
+  await req.fabricService.connectToNetwork(userId);
+  res.on('finish', () => req.fabricService.disconnect());
+  next();
 });
+
+const globalFabricService = new FabricService();
 
 app.use(authMiddleware);
 
-// ===================== Auth Routes =====================
-
+// Auth Routes
 app.post('/api/login', asyncHandler(async (req, res) => {
-  console.log('[LOGIN] Incoming login request:', req.body);
   const { username, password } = req.body;
-  if (!username || !password) {
-    console.warn('[LOGIN] Missing username or password');
-    return res.status(400).json({ error: 'Username and password are required' });
-  }
   const user = findUser(username);
-  console.log('[LOGIN] User lookup result:', user);
-  if (!user) {
-    console.warn('[LOGIN] User not found:', username);
+  if (!user || !await bcrypt.compare(password, user.passwordHash)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  try {
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    console.log('[LOGIN] Password compare result:', valid);
-    if (!valid) {
-      console.warn('[LOGIN] Invalid password for user:', username);
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-  } catch (err) {
-    console.error('[LOGIN] Error during bcrypt.compare:', err);
-    return res.status(500).json({ error: 'Internal error during password check' });
-  }
-  // Issue JWT
-  try {
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
-    console.log('[LOGIN] JWT issued successfully');
-    res.json({
-      success: true,
-      token,
-      user: { id: user.id, username: user.username, role: user.role, name: user.name }
-    });
-  } catch (err) {
-    console.error('[LOGIN] Error during jwt.sign:', err);
-    return res.status(500).json({ error: 'Internal error during token generation' });
-  }
+  const token = jwt.sign({ id: user.id, username: user.username, role: user.role, shipOwnerId: user.shipOwnerId }, JWT_SECRET, { expiresIn: '8h' });
+  res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role, name: user.name, shipOwnerId: user.shipOwnerId } });
 }));
 
 // ===================== API Routes =====================
 
 // Health check
-app.get('/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));
 
-// ===================== Authority Routes =====================
-
+// Authority Routes
 app.post('/api/authorities', requireRole('authority'), asyncHandler(async (req, res) => {
-    const { authorityId, address, name } = req.body;
-    
-    if (!authorityId || !address || !name) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const result = await fabricService.submitTransaction('registerAuthority', authorityId, address, name);
+    const result = await globalFabricService.submitTransaction('registerAuthority', ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
 app.post('/api/shipowners', requireRole('authority'), asyncHandler(async (req, res) => {
-    const { shipOwnerId, address, name, companyName } = req.body;
-    
-    if (!shipOwnerId || !address || !name || !companyName) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const result = await fabricService.submitTransaction('registerShipOwner', shipOwnerId, address, name, companyName);
+    const result = await globalFabricService.submitTransaction('registerShipOwner', ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/shipowners', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllShipOwners');
+    const result = await globalFabricService.evaluateTransaction('queryAllShipOwners');
     res.json({ success: true, data: result });
 }));
 
-// ===================== Vessel Routes =====================
-
+// Vessel Routes
 app.post('/api/vessels', requireRole('authority'), asyncHandler(async (req, res) => {
-    const { vesselId, name, type, imoNumber, flag, buildYear, shipOwnerId } = req.body;
-    
-    if (!vesselId || !name || !type || !imoNumber || !flag || !buildYear || !shipOwnerId) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const result = await fabricService.submitTransaction('registerVessel', vesselId, name, type, imoNumber, flag, buildYear, shipOwnerId);
+    const result = await globalFabricService.submitTransaction('registerVessel', ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/vessels', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllVessels');
+    const result = await globalFabricService.evaluateTransaction('queryAllVessels');
     res.json({ success: true, data: result });
 }));
 
-app.get('/api/vessels/:vesselId', asyncHandler(async (req, res) => {
-    const { vesselId } = req.params;
-    const result = await fabricService.evaluateTransaction('queryVessel', vesselId);
-    res.json({ success: true, data: result });
-}));
-
-// Apply user-specific connection middleware ONLY to these routes
 app.get('/api/vessels/my', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
-    const result = await req.userFabricService.evaluateTransaction('queryMyVessels');
+    const result = await req.fabricService.evaluateTransaction('queryMyVessels');
     res.json({ success: true, data: result });
 }));
 
-app.get('/api/findings/my/open', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
-    const result = await req.userFabricService.evaluateTransaction('queryMyOpenFindings');
-    res.json({ success: true, data: result });
-}));
-
-// ===================== Survey Routes =====================
-
+// Survey Routes
 app.post('/api/surveys', requireRole('authority'), asyncHandler(async (req, res) => {
-    const { surveyId, vesselId, surveyType, scheduledDate, surveyorName } = req.body;
-    
-    if (!surveyId || !vesselId || !surveyType || !scheduledDate || !surveyorName) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const result = await fabricService.submitTransaction('scheduleSurvey', surveyId, vesselId, surveyType, scheduledDate, surveyorName);
-    res.json({ success: true, data: result });
-}));
-
-app.put('/api/surveys/:surveyId/start', requireRole('authority'), asyncHandler(async (req, res) => {
-    const { surveyId } = req.params;
-    const result = await fabricService.submitTransaction('startSurvey', surveyId);
+    const result = await globalFabricService.submitTransaction('scheduleSurvey', ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/surveys', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllSurveys');
+    const result = await globalFabricService.evaluateTransaction('queryAllSurveys');
     res.json({ success: true, data: result });
 }));
 
-// ===================== Findings Routes =====================
+app.get('/api/surveys/my', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
+    const result = await req.fabricService.evaluateTransaction('queryMySurveys');
+    res.json({ success: true, data: result });
+}));
 
+// Findings Routes
 app.post('/api/surveys/:surveyId/findings', asyncHandler(async (req, res) => {
-    const { surveyId } = req.params;
-    const { findingId, description, severity, location, requirement } = req.body;
-    
-    if (!findingId || !description || !severity || !location || !requirement) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const result = await fabricService.submitTransaction('addFinding', surveyId, findingId, description, severity, location, requirement);
+    const result = await globalFabricService.submitTransaction('addFinding', req.params.surveyId, ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
-app.put('/api/surveys/:surveyId/findings/:findingId/resolve', asyncHandler(async (req, res) => {
-    const { surveyId, findingId } = req.params;
-    const { resolutionDescription, evidenceUrl } = req.body;
-    
-    if (!resolutionDescription) {
-        return res.status(400).json({ error: 'Resolution description is required' });
-    }
-
-    const result = await fabricService.submitTransaction('resolveFinding', surveyId, findingId, resolutionDescription, evidenceUrl || '');
+app.put('/api/surveys/:surveyId/findings/:findingId/resolve', connectAsUser, asyncHandler(async (req, res) => {
+    const result = await req.fabricService.submitTransaction('resolveFinding', req.params.surveyId, req.params.findingId, ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
-app.put('/api/surveys/:surveyId/findings/:findingId/verify', asyncHandler(async (req, res) => {
-    const { surveyId, findingId } = req.params;
-    const { verificationNotes } = req.body;
-    
-    const result = await fabricService.submitTransaction('verifyFinding', surveyId, findingId, verificationNotes || '');
-    res.json({ success: true, data: result });
-}));
-
-app.get('/api/surveys/:surveyId/findings', asyncHandler(async (req, res) => {
-    const { surveyId } = req.params;
-    const result = await fabricService.evaluateTransaction('queryFindings', surveyId);
-    res.json({ success: true, data: result });
-}));
-
-app.get('/api/findings/open', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllOpenFindings');
+app.put('/api/surveys/:surveyId/findings/:findingId/verify', requireRole('authority'), asyncHandler(async (req, res) => {
+    const result = await globalFabricService.submitTransaction('verifyFinding', req.params.surveyId, req.params.findingId, ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/findings', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllFindings');
+    const result = await globalFabricService.evaluateTransaction('queryAllFindings');
     res.json({ success: true, data: result });
 }));
 
-// ===================== Certificate Routes =====================
+app.get('/api/findings/my/open', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
+    const result = await req.fabricService.evaluateTransaction('queryMyOpenFindings');
+    res.json({ success: true, data: result });
+}));
 
+// Certificate Routes
 app.post('/api/certificates', requireRole('authority'), asyncHandler(async (req, res) => {
-    const { certificateId, vesselId, surveyId, certificateType, validFrom, validTo } = req.body;
-    
-    if (!certificateId || !vesselId || !surveyId || !certificateType || !validFrom || !validTo) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const result = await fabricService.submitTransaction('issueCertificate', certificateId, vesselId, surveyId, certificateType, validFrom, validTo);
+    const result = await globalFabricService.submitTransaction('issueCertificate', ...Object.values(req.body));
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/certificates', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllCertificates');
+    const result = await globalFabricService.evaluateTransaction('queryAllCertificates');
     res.json({ success: true, data: result });
 }));
 
-app.get('/api/certificates/:certificateId', asyncHandler(async (req, res) => {
-    const { certificateId } = req.params;
-    const result = await fabricService.evaluateTransaction('queryCertificate', certificateId);
+app.get('/api/certificates/my', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
+    const result = await req.fabricService.evaluateTransaction('queryMyCertificates');
     res.json({ success: true, data: result });
 }));
 
-app.get('/api/certificates/:certificateId/verify', asyncHandler(async (req, res) => {
-    const { certificateId } = req.params;
-    const result = await fabricService.evaluateTransaction('verifyCertificate', certificateId);
+app.get('/api/certificates/:id/verify', asyncHandler(async (req, res) => {
+    const result = await globalFabricService.evaluateTransaction('verifyCertificate', req.params.id);
     res.json({ success: true, data: result });
 }));
 
-// Error handling middleware
+// Error handling
 app.use((error, req, res, next) => {
     console.error('API Error:', error);
-    res.status(500).json({
-        error: 'Internal server error',
-        message: error.message,
-        ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-    });
+    res.status(500).json({ error: 'Internal server error', message: error.message });
 });
 
-// SPA fallback - serve index.html for non-API routes
-app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) {
-        res.status(404).json({ error: 'API route not found' });
-    } else {
-        res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
-    }
-});
+// SPA fallback
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html')));
 
 // Start server
-const startServer = async () => {
+(async () => {
     try {
-        await initializeFabric();
-        
-        app.listen(PORT, HOST, () => {
-            console.log(`🚀 BKI Ship Certification API Server running on ${HOST}:${PORT}`);
-            console.log(`📚 API Documentation available at http://${HOST}:${PORT}/health`);
-        });
+        await globalFabricService.initializeWallet();
+        await globalFabricService.connectToNetwork('admin');
+        app.listen(PORT, HOST, () => console.log(`🚀 Server running on ${HOST}:${PORT}`));
     } catch (error) {
         console.error('Failed to start server:', error);
         process.exit(1);
     }
-};
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-    console.log('Shutting down gracefully...');
-    await fabricService.disconnect();
-    process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-    console.log('Shutting down gracefully...');
-    await fabricService.disconnect();
-    process.exit(0);
-});
-
-startServer();
+})();
