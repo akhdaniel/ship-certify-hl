@@ -28,8 +28,8 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static files from frontend dist
-app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -354,22 +354,7 @@ async function initializeFabric() {
     }
 }
 
-// Initialize Fabric connection
-async function initializeFabric() {
-    try {
-        await fabricService.initializeWallet();
-        await fabricService.connectToNetwork();
-        console.log('Fabric network connected successfully');
-    } catch (error) {
-        console.error('Failed to initialize Fabric connection:', error);
-        process.exit(1);
-    }
-}
 
-// Error handling middleware
-const asyncHandler = (fn) => (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-};
 
 // Helper: Load users from file with error handling
 function loadUsers() {
@@ -685,7 +670,7 @@ app.get('*', (req, res) => {
     if (req.path.startsWith('/api/')) {
         res.status(404).json({ error: 'API route not found' });
     } else {
-        res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
     }
 });
 
