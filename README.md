@@ -318,3 +318,102 @@ Copyright © 2024 BKI Ship Certification System. All rights reserved.
 ---
 
 **Catatan**: Aplikasi ini dibuat untuk demonstrasi sistem sertifikasi kapal menggunakan teknologi blockchain. Untuk implementasi production, diperlukan additional security measures dan compliance dengan regulasi maritim yang berlaku.
+
+---
+
+## Production Deployment
+
+This section provides instructions for deploying the entire application stack to a production environment using Docker Compose.
+
+### Prerequisites
+
+- **Git**: For cloning the repository.
+- **Docker and Docker Compose**: To build and run the services.
+- **OpenSSL**: To generate a secure JWT secret.
+
+### Step 1: Initial Server Setup
+
+1.  **Clone the Repository**
+    Clone the project to your production machine.
+    ```bash
+    git clone <your-repository-url>
+    cd ship-certify-hl
+    ```
+
+2.  **Generate Fabric Crypto Materials**
+    This step is required to create the certificates and keys for the Fabric network components.
+    ```bash
+    ./network.sh generateCerts
+    ```
+
+### Step 2: Configure Production Environment
+
+1.  **Create a JWT Secret**
+    A strong, secret key is required for signing JSON Web Tokens (JWTs). Generate one using `openssl`.
+    ```bash
+    openssl rand -base64 32
+    ```
+    This will output a random, 256-bit key. Copy this key.
+
+2.  **Create an Environment File**
+    Create a `.env` file in the project root to store the secret.
+    ```bash
+    nano .env
+    ```
+    Add the secret you just generated to this file:
+    ```env
+    JWT_SECRET=your_generated_secret_key_here
+    ```
+    Replace `your_generated_secret_key_here` with the key you copied. Docker Compose will automatically load this file.
+
+### Step 3: Run the Application Stack
+
+1.  **Pull the Latest Application Image**
+    Ensure you have the most recent version of the application from Docker Hub.
+    ```bash
+    docker pull akhdaniel2/ship-certify:latest
+    ```
+
+2.  **Start All Services**
+    Use the `docker-compose.prod.yaml` file to launch the entire stack, including the Fabric network and the API server.
+    ```bash
+    docker compose -f docker-compose.prod.yaml up -d
+    ```
+    This will start all services in detached mode.
+
+### Step 4: Deploy and Initialize the Smart Contract
+
+After the network is running, you need to create the application channel and deploy the chaincode.
+
+1.  **Create the Channel**
+    ```bash
+    ./network.sh createChannel
+    ```
+
+2.  **Deploy the Chaincode**
+    ```bash
+    ./network.sh deployCC
+    ```
+
+### Step 5: Verification and Management
+
+1.  **Access the Application**
+    The application is now fully deployed. You can access the web interface by navigating to your server's IP address on port 3000.
+    - **URL**: `http://<your-server-ip>:3000`
+
+2.  **View Logs**
+    To monitor the logs of all running services:
+    ```bash
+    docker compose -f docker-compose.prod.yaml logs -f
+    ```
+    To view the logs for a specific service (e.g., `api-server`):
+    ```bash
+    docker compose -f docker-compose.prod.yaml logs -f api-server
+    ```
+
+3.  **Stopping the Application**
+    To stop all services, use the following command:
+    ```bash
+    docker compose -f docker-compose.prod.yaml down
+    ```
+This will stop and remove the containers, but the data in the Docker volumes (like blockchain ledger data) will be preserved.
