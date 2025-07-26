@@ -125,7 +125,7 @@ services:
     image: akhdaniel2/ship-certify:latest
     restart: always
     ports:
-      - "3000:3000"
+      - "4000:3000"
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
