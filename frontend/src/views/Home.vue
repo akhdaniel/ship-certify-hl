@@ -72,7 +72,7 @@
           <div class="menu-item-icon">👥</div>
           <div class="menu-item-content">
             <div class="menu-item-title">Ship Owners</div>
-              <div class="authority-box-value">{{ Math.floor(statistics.totalVessels * 0.6) }}</div>
+              <div class="authority-box-value">{{ statistics.totalShipOwners }}</div>
 
             <div class="authority-box-action">Kelola pemilik kapal →</div>
           </div>
@@ -277,7 +277,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { vesselApi, certificateApi, surveyApi } from '@/services/api'
+import { vesselApi, certificateApi, surveyApi, findingApi, shipOwnerApi } from '@/services/api'
 // import { Ship as ShipIcon } from '@vicons/ionicons5'
 
 const userStore = useUserStore()
@@ -290,7 +290,8 @@ const statistics = ref({
   openFindings: 0,
   issuedCertificates: 0,
   myVessels: 0,
-  pendingFindings: 0
+  pendingFindings: 0,
+  totalShipOwners: 0
 })
 
 const currentRoleText = computed(() => {
@@ -319,29 +320,38 @@ const loadStatistics = async () => {
   try {
     loading.value = true
     
-    const [vessels, certificates] = await Promise.all([
+    // Public stats
+    const [vessels, certificates, surveys, openFindings, shipOwners] = await Promise.all([
       vesselApi.getAll().catch(() => ({ data: [] })),
-      certificateApi.getAll().catch(() => ({ data: [] }))
-    ])
+      certificateApi.getAll().catch(() => ({ data: [] })),
+      surveyApi.getAll().catch(() => ({ data: [] })),
+      findingApi.getAllOpen().catch(() => ({ data: [] })),
+      shipOwnerApi.getAll().catch(() => ({ data: [] }))
+    ]);
 
-    statistics.value.totalVessels = vessels.data?.length || 0
-    statistics.value.activeCertificates = certificates.data?.filter(cert => 
-      cert.Record?.status === 'active'
-    ).length || 0
-    
-    // Mock some additional statistics
-    statistics.value.activeSurveys = Math.floor(statistics.value.totalVessels * 0.3)
-    statistics.value.openFindings = Math.floor(statistics.value.totalVessels * 0.15)
-    statistics.value.issuedCertificates = statistics.value.activeCertificates
-    statistics.value.myVessels = Math.floor(statistics.value.totalVessels * 0.1)
-    statistics.value.pendingFindings = Math.floor(statistics.value.openFindings * 0.2)
+    statistics.value.totalVessels = vessels.data?.length || 0;
+    statistics.value.activeCertificates = certificates.data?.filter(cert => cert.Record?.status === 'active').length || 0;
+    statistics.value.activeSurveys = surveys.data?.filter(survey => survey.Record?.status === 'in-progress').length || 0;
+    statistics.value.openFindings = openFindings.data?.length || 0;
+    statistics.value.issuedCertificates = statistics.value.activeCertificates;
+    statistics.value.totalShipOwners = shipOwners.data?.length || 0;
+
+    // Role-specific stats
+    if (userStore.isShipOwner()) {
+      const [myVessels, myOpenFindings] = await Promise.all([
+        vesselApi.getMy().catch(() => ({ data: [] })),
+        findingApi.getMyOpen().catch(() => ({ data: [] }))
+      ]);
+      statistics.value.myVessels = myVessels.data?.length || 0;
+      statistics.value.pendingFindings = myOpenFindings.data?.length || 0;
+    }
 
   } catch (error) {
-    console.error('Failed to load statistics:', error)
+    console.error('Failed to load statistics:', error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
   loadStatistics()

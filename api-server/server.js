@@ -417,7 +417,28 @@ function requireRole(role) {
   };
 }
 
+// Middleware to connect to Fabric using the user's identity
+const connectAsUser = asyncHandler(async (req, res, next) => {
+  // Default to admin for unauthenticated or general routes
+  const userId = req.user ? req.user.username : 'admin';
+  
+  // Create a new FabricService instance for the request
+  req.fabricService = new FabricService();
+  await req.fabricService.initializeWallet();
+  await req.fabricService.connectToNetwork(userId);
+  
+  // Teardown connection after response is sent
+  res.on('finish', async () => {
+    if (req.fabricService) {
+      await req.fabricService.disconnect();
+    }
+  });
+
+  next();
+});
+
 app.use(authMiddleware);
+app.use('/api', connectAsUser);
 
 // ===================== Auth Routes =====================
 
@@ -476,7 +497,7 @@ app.post('/api/authorities', requireRole('authority'), asyncHandler(async (req, 
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await fabricService.submitTransaction('registerAuthority', authorityId, address, name);
+    const result = await req.fabricService.submitTransaction('registerAuthority', authorityId, address, name);
     res.json({ success: true, data: result });
 }));
 
@@ -487,12 +508,12 @@ app.post('/api/shipowners', requireRole('authority'), asyncHandler(async (req, r
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await fabricService.submitTransaction('registerShipOwner', shipOwnerId, address, name, companyName);
+    const result = await req.fabricService.submitTransaction('registerShipOwner', shipOwnerId, address, name, companyName);
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/shipowners', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllShipOwners');
+    const result = await req.fabricService.evaluateTransaction('queryAllShipOwners');
     res.json({ success: true, data: result });
 }));
 
@@ -505,18 +526,28 @@ app.post('/api/vessels', requireRole('authority'), asyncHandler(async (req, res)
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await fabricService.submitTransaction('registerVessel', vesselId, name, type, imoNumber, flag, buildYear, shipOwnerId);
+    const result = await req.fabricService.submitTransaction('registerVessel', vesselId, name, type, imoNumber, flag, buildYear, shipOwnerId);
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/vessels', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllVessels');
+    const result = await req.fabricService.evaluateTransaction('queryAllVessels');
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/vessels/:vesselId', asyncHandler(async (req, res) => {
     const { vesselId } = req.params;
-    const result = await fabricService.evaluateTransaction('queryVessel', vesselId);
+    const result = await req.fabricService.evaluateTransaction('queryVessel', vesselId);
+    res.json({ success: true, data: result });
+}));
+
+app.get('/api/vessels/my', requireRole('shipowner'), asyncHandler(async (req, res) => {
+    const result = await req.fabricService.evaluateTransaction('queryMyVessels');
+    res.json({ success: true, data: result });
+}));
+
+app.get('/api/findings/my/open', requireRole('shipowner'), asyncHandler(async (req, res) => {
+    const result = await req.fabricService.evaluateTransaction('queryMyOpenFindings');
     res.json({ success: true, data: result });
 }));
 
@@ -529,18 +560,18 @@ app.post('/api/surveys', requireRole('authority'), asyncHandler(async (req, res)
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await fabricService.submitTransaction('scheduleSurvey', surveyId, vesselId, surveyType, scheduledDate, surveyorName);
+    const result = await req.fabricService.submitTransaction('scheduleSurvey', surveyId, vesselId, surveyType, scheduledDate, surveyorName);
     res.json({ success: true, data: result });
 }));
 
 app.put('/api/surveys/:surveyId/start', requireRole('authority'), asyncHandler(async (req, res) => {
     const { surveyId } = req.params;
-    const result = await fabricService.submitTransaction('startSurvey', surveyId);
+    const result = await req.fabricService.submitTransaction('startSurvey', surveyId);
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/surveys', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllSurveys');
+    const result = await req.fabricService.evaluateTransaction('queryAllSurveys');
     res.json({ success: true, data: result });
 }));
 
@@ -554,7 +585,7 @@ app.post('/api/surveys/:surveyId/findings', asyncHandler(async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await fabricService.submitTransaction('addFinding', surveyId, findingId, description, severity, location, requirement);
+    const result = await req.fabricService.submitTransaction('addFinding', surveyId, findingId, description, severity, location, requirement);
     res.json({ success: true, data: result });
 }));
 
@@ -566,7 +597,7 @@ app.put('/api/surveys/:surveyId/findings/:findingId/resolve', asyncHandler(async
         return res.status(400).json({ error: 'Resolution description is required' });
     }
 
-    const result = await fabricService.submitTransaction('resolveFinding', surveyId, findingId, resolutionDescription, evidenceUrl || '');
+    const result = await req.fabricService.submitTransaction('resolveFinding', surveyId, findingId, resolutionDescription, evidenceUrl || '');
     res.json({ success: true, data: result });
 }));
 
@@ -574,13 +605,18 @@ app.put('/api/surveys/:surveyId/findings/:findingId/verify', asyncHandler(async 
     const { surveyId, findingId } = req.params;
     const { verificationNotes } = req.body;
     
-    const result = await fabricService.submitTransaction('verifyFinding', surveyId, findingId, verificationNotes || '');
+    const result = await req.fabricService.submitTransaction('verifyFinding', surveyId, findingId, verificationNotes || '');
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/surveys/:surveyId/findings', asyncHandler(async (req, res) => {
     const { surveyId } = req.params;
-    const result = await fabricService.evaluateTransaction('queryFindings', surveyId);
+    const result = await req.fabricService.evaluateTransaction('queryFindings', surveyId);
+    res.json({ success: true, data: result });
+}));
+
+app.get('/api/findings/open', asyncHandler(async (req, res) => {
+    const result = await req.fabricService.evaluateTransaction('queryAllOpenFindings');
     res.json({ success: true, data: result });
 }));
 
@@ -593,24 +629,24 @@ app.post('/api/certificates', requireRole('authority'), asyncHandler(async (req,
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await fabricService.submitTransaction('issueCertificate', certificateId, vesselId, surveyId, certificateType, validFrom, validTo);
+    const result = await req.fabricService.submitTransaction('issueCertificate', certificateId, vesselId, surveyId, certificateType, validFrom, validTo);
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/certificates', asyncHandler(async (req, res) => {
-    const result = await fabricService.evaluateTransaction('queryAllCertificates');
+    const result = await req.fabricService.evaluateTransaction('queryAllCertificates');
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/certificates/:certificateId', asyncHandler(async (req, res) => {
     const { certificateId } = req.params;
-    const result = await fabricService.evaluateTransaction('queryCertificate', certificateId);
+    const result = await req.fabricService.evaluateTransaction('queryCertificate', certificateId);
     res.json({ success: true, data: result });
 }));
 
 app.get('/api/certificates/:certificateId/verify', asyncHandler(async (req, res) => {
     const { certificateId } = req.params;
-    const result = await fabricService.evaluateTransaction('verifyCertificate', certificateId);
+    const result = await req.fabricService.evaluateTransaction('verifyCertificate', certificateId);
     res.json({ success: true, data: result });
 }));
 
@@ -636,8 +672,8 @@ app.get('*', (req, res) => {
 // Start server
 const startServer = async () => {
     try {
-        await initializeFabric();
-        
+        // The server no longer needs to maintain a global Fabric connection.
+        // Connections are now managed on a per-request basis by the connectAsUser middleware.
         app.listen(PORT, HOST, () => {
             console.log(`🚀 BKI Ship Certification API Server running on ${HOST}:${PORT}`);
             console.log(`📚 API Documentation available at http://${HOST}:${PORT}/health`);
@@ -651,13 +687,13 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('Shutting down gracefully...');
-    await fabricService.disconnect();
+    // No global connection to disconnect
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
     console.log('Shutting down gracefully...');
-    await fabricService.disconnect();
+    // No global connection to disconnect
     process.exit(0);
 });
 

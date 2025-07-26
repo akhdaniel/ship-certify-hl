@@ -40,6 +40,7 @@ export const vesselApi = {
   getAll: () => api.get('/vessels'),
   getById: (id) => api.get(`/vessels/${id}`),
   create: (data) => api.post('/vessels', data),
+  getMy: () => api.get('/vessels/my'),
 }
 
 export const surveyApi = {
@@ -49,10 +50,12 @@ export const surveyApi = {
 }
 
 export const findingApi = {
+  getAllOpen: () => api.get('/findings/open'),
   getBySurvey: (surveyId) => api.get(`/surveys/${surveyId}/findings`),
   create: (surveyId, data) => api.post(`/surveys/${surveyId}/findings`, data),
   resolve: (surveyId, findingId, data) => api.put(`/surveys/${surveyId}/findings/${findingId}/resolve`, data),
   verify: (surveyId, findingId, data) => api.put(`/surveys/${surveyId}/findings/${findingId}/verify`, data),
+  getMyOpen: () => api.get('/findings/my/open'),
 }
 
 export const certificateApi = {

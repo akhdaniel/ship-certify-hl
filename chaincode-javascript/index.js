@@ -487,6 +487,53 @@ class ShipCertifyContract extends Contract {
         }
         return userBytes.toString();
     }
+
+    async queryAllOpenFindings(ctx) {
+        const allSurveysString = await this.queryAllSurveys(ctx);
+        const allSurveys = JSON.parse(allSurveysString);
+        
+        const openFindings = [];
+        for (const surveyObj of allSurveys) {
+            if (surveyObj.Record && surveyObj.Record.findings) {
+                for (const finding of surveyObj.Record.findings) {
+                    if (finding.status === 'open') {
+                        const findingWithContext = { ...finding, surveyId: surveyObj.Key };
+                        openFindings.push(findingWithContext);
+                    }
+                }
+            }
+        }
+        return JSON.stringify(openFindings);
+    }
+
+    async queryMyVessels(ctx) {
+        const shipOwnerId = ctx.clientIdentity.getID();
+        const allVesselsString = await this.queryAllVessels(ctx);
+        const allVessels = JSON.parse(allVesselsString);
+        const myVessels = allVessels.filter(v => v.Record.shipOwnerId === shipOwnerId);
+        return JSON.stringify(myVessels);
+    }
+
+    async queryMyOpenFindings(ctx) {
+        const myVesselsString = await this.queryMyVessels(ctx);
+        const myVessels = JSON.parse(myVesselsString);
+        const myVesselIds = myVessels.map(v => v.Key);
+
+        const allSurveysString = await this.queryAllSurveys(ctx);
+        const allSurveys = JSON.parse(allSurveysString);
+
+        const myOpenFindings = [];
+        for (const surveyObj of allSurveys) {
+            if (surveyObj.Record && myVesselIds.includes(surveyObj.Record.vesselId) && surveyObj.Record.findings) {
+                for (const finding of surveyObj.Record.findings) {
+                    if (finding.status === 'open') {
+                        myOpenFindings.push({ ...finding, surveyId: surveyObj.Key, vesselId: surveyObj.Record.vesselId });
+                    }
+                }
+            }
+        }
+        return JSON.stringify(myOpenFindings);
+    }
 }
 
 module.exports = ShipCertifyContract;
