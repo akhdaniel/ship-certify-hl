@@ -66,15 +66,17 @@ echo "Package ID: $PACKAGE_ID"
 # Approve chaincode for Authority
 echo "Approving chaincode for Authority..."
 setGlobalsForPeer0Authority
-peer lifecycle chaincode approveformyorg -o localhost:7050 \
-    --ordererTLSHostnameOverride orderer.bki.com \
-    --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" \
-    --channelID ${CHANNEL_NAME} \
-    --name ${CHAINCODE_NAME} \
-    --version ${CHAINCODE_VERSION} \
-    --package-id ${PACKAGE_ID} \
-    --sequence ${CHAINCODE_SEQUENCE} \
-    --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')"
+retry_count=0
+max_retries=10
+until peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.bki.com --tls --cafile "${PWD}/organizations/ordererOrganizations/bki.com/orderers/orderer.bki.com/tls/ca.crt" --channelID ${CHANNEL_NAME} --name ${CHAINCODE_NAME} --version ${CHAINCODE_VERSION} --package-id ${PACKAGE_ID} --sequence ${CHAINCODE_SEQUENCE} --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')"; do
+  retry_count=$((retry_count+1))
+  if [ $retry_count -gt $max_retries ]; then
+    echo "Failed to approve chaincode for Authority after $max_retries attempts, exiting."
+    exit 1
+  fi
+  echo "Waiting for orderer to be ready... (attempt $retry_count)"
+  sleep 5
+done
 
 if [ $? -ne 0 ]; then
     echo "Failed to approve chaincode for Authority"

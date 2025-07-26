@@ -94,29 +94,48 @@ class FabricService {
     }
 
     async connectToNetwork(userId = 'admin') {
-        try {
-            const identity = await this.wallet.get(userId);
-            if (!identity) {
-                throw new Error(`Identity not found in wallet: ${userId}`);
+        const maxRetries = 10;
+        const retryInterval = 10000; // 10 seconds
+
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const identity = await this.wallet.get(userId);
+                if (!identity) {
+                    throw new Error(`Identity not found in wallet: ${userId}`);
+                }
+                const userMspId = identity.mspId;
+
+                const ccp = this.generateConnectionProfile(userMspId);
+                this.gateway = new Gateway();
+                
+                await this.gateway.connect(ccp, {
+                    wallet: this.wallet,
+                    identity: userId,
+                    discovery: { enabled: false },
+                    eventHandlerOptions: { strategy: null },
+                    queryHandlerOptions: { timeout: 45 }
+                });
+
+                const network = await this.gateway.getNetwork(channelName);
+                this.contract = network.getContract(chaincodeName);
+                
+                // Perform a test query to ensure chaincode is ready
+                await this.evaluateTransaction('queryAllVessels');
+                console.log('Chaincode is responsive.');
+
+                return; // Success
+            } catch (error) {
+                console.error(`Failed to connect to network for user ${userId}: ${error}`);
+                if (this.gateway && this.gateway.isConnected()) {
+                    await this.gateway.disconnect();
+                }
+                if (i < maxRetries - 1) {
+                    console.log(`Retrying in ${retryInterval / 1000} seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, retryInterval));
+                } else {
+                    throw new Error('Could not connect to Fabric network after multiple retries.');
+                }
             }
-            const userMspId = identity.mspId;
-
-            const ccp = this.generateConnectionProfile(userMspId);
-            this.gateway = new Gateway();
-            
-            await this.gateway.connect(ccp, {
-                wallet: this.wallet,
-                identity: userId,
-                discovery: { enabled: false },
-                eventHandlerOptions: { strategy: null },
-                queryHandlerOptions: { timeout: 45 }
-            });
-
-            const network = await this.gateway.getNetwork(channelName);
-            this.contract = network.getContract(chaincodeName);
-        } catch (error) {
-            console.error(`Failed to connect to network for user ${userId}: ${error}`);
-            throw error;
         }
     }
 
@@ -131,8 +150,10 @@ class FabricService {
     }
 
     async evaluateTransaction(functionName, ...args) {
+        console.log(`Evaluating transaction: ${functionName}(${args.join(',')})`);
         const resultBytes = await this.contract.evaluateTransaction(functionName, ...args);
         const resultString = resultBytes.toString();
+        console.log(`Transaction result: ${resultString}`);
         return resultString ? JSON.parse(resultString) : [];
     }
 }
@@ -305,7 +326,36 @@ app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'frontend', 'dist',
 (async () => {
     try {
         await globalFabricService.initializeWallet();
-        await globalFabricService.connectToNetwork('authority');
+        
+        const maxRetries = 10;
+        const retryInterval = 10000; // 10 seconds
+        let connected = false;
+
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                console.log(`Attempting to connect to Fabric network (attempt ${i + 1}/${maxRetries})...`);
+                await globalFabricService.connectToNetwork('authority');
+                console.log('Successfully connected to Fabric network.');
+                
+                // Perform a test query to ensure chaincode is ready
+                await globalFabricService.evaluateTransaction('queryAllVessels');
+                console.log('Chaincode is responsive.');
+
+                connected = true;
+                break;
+            } catch (error) {
+                console.error(`Connection attempt ${i + 1} failed:`, error.message);
+                if (i < maxRetries - 1) {
+                    console.log(`Retrying in ${retryInterval / 1000} seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, retryInterval));
+                }
+            }
+        }
+
+        if (!connected) {
+            throw new Error('Could not connect to Fabric network after multiple retries.');
+        }
+
         app.listen(PORT, HOST, () => console.log(`🚀 Server running on ${HOST}:${PORT}`));
     } catch (error) {
         console.error('Failed to start server:', error);
