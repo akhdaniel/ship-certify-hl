@@ -11,7 +11,7 @@ CHANNEL_NAME="bkichannel"
 CHAINCODE_NAME="shipCertify"
 CHAINCODE_PATH="./chaincode-javascript"
 CHAINCODE_VERSION="2"
-CHAINCODE_SEQUENCE="4"
+CHAINCODE_SEQUENCE="1"
 CHAINCODE_LANGUAGE="node"
 
 # Colors for output
