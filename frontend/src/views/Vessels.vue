@@ -160,6 +160,11 @@ const columns = computed(() => [
     width: 200
   },
   {
+    title: 'Ship Owner',
+    key: 'shipOwnerName',
+    width: 200
+  },
+  {
     title: 'Jenis',
     key: 'type',
     width: 120,
@@ -214,14 +219,30 @@ const shipOwnerOptions = computed(() =>
   }))
 )
 
+const shipOwnerMap = computed(() => {
+  const map = new Map()
+  shipOwners.value.forEach(owner => {
+    map.set(owner.Record.id, `${owner.Record.name} (${owner.Record.companyName})`)
+  })
+  return map
+})
+
+const vesselsWithOwners = computed(() => {
+  return vessels.value.map(vessel => ({
+    ...vessel,
+    shipOwnerName: shipOwnerMap.value.get(vessel.shipOwnerId) || 'N/A'
+  }))
+})
+
 const filteredVessels = computed(() => {
-  if (!searchQuery.value) return vessels.value
+  if (!searchQuery.value) return vesselsWithOwners.value
   
   const query = searchQuery.value.toLowerCase()
-  return vessels.value.filter(vessel => 
+  return vesselsWithOwners.value.filter(vessel => 
     vessel.name?.toLowerCase().includes(query) ||
     vessel.imoNumber?.toLowerCase().includes(query) ||
-    vessel.flag?.toLowerCase().includes(query)
+    vessel.flag?.toLowerCase().includes(query) ||
+    vessel.shipOwnerName?.toLowerCase().includes(query)
   )
 })
 

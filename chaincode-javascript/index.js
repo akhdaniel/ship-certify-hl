@@ -519,16 +519,34 @@ class ShipCertifyContract extends Contract {
         return JSON.stringify(openFindings);
     }
 
-    async queryMyVessels(ctx) {
-        const shipOwnerId = ctx.clientIdentity.getID();
+    async queryMyVessels(ctx, shipOwnerId) {
+        console.info('--- DEBUG: queryMyVessels ---');
+        console.info(`Searching for shipOwnerId: "${shipOwnerId}" (length: ${shipOwnerId.length})`);
+
+        if (!shipOwnerId) {
+            throw new Error('shipOwnerId is required to query personal vessels');
+        }
+        
         const allVesselsString = await this.queryAllVessels(ctx);
         const allVessels = JSON.parse(allVesselsString);
-        const myVessels = allVessels.filter(v => v.Record.shipOwnerId === shipOwnerId);
+        
+        console.info(`Found ${allVessels.length} total vessels. Filtering...`);
+
+        const myVessels = allVessels.filter(v => {
+            const recordOwnerId = v.Record.shipOwnerId;
+            const isMatch = recordOwnerId === shipOwnerId;
+            console.info(`  - Vessel ${v.Key}: owner is "${recordOwnerId}" (length: ${recordOwnerId.length}). Match: ${isMatch}`);
+            return isMatch;
+        });
+
+        console.info(`Found ${myVessels.length} matching vessels.`);
+        console.info('--- END DEBUG: queryMyVessels ---');
+        
         return JSON.stringify(myVessels);
     }
 
-    async queryMyOpenFindings(ctx) {
-        const myVesselsString = await this.queryMyVessels(ctx);
+    async queryMyOpenFindings(ctx, shipOwnerId) {
+        const myVesselsString = await this.queryMyVessels(ctx, shipOwnerId);
         const myVessels = JSON.parse(myVesselsString);
         const myVesselIds = myVessels.map(v => v.Key);
 
@@ -563,8 +581,8 @@ class ShipCertifyContract extends Contract {
         return JSON.stringify(allFindings);
     }
 
-    async queryMySurveys(ctx) {
-        const myVesselsString = await this.queryMyVessels(ctx);
+    async queryMySurveys(ctx, shipOwnerId) {
+        const myVesselsString = await this.queryMyVessels(ctx, shipOwnerId);
         const myVessels = JSON.parse(myVesselsString);
         const myVesselIds = myVessels.map(v => v.Key);
 
@@ -575,8 +593,8 @@ class ShipCertifyContract extends Contract {
         return JSON.stringify(mySurveys);
     }
 
-    async queryMyCertificates(ctx) {
-        const myVesselsString = await this.queryMyVessels(ctx);
+    async queryMyCertificates(ctx, shipOwnerId) {
+        const myVesselsString = await this.queryMyVessels(ctx, shipOwnerId);
         const myVessels = JSON.parse(myVesselsString);
         const myVesselIds = myVessels.map(v => v.Key);
 

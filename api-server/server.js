@@ -53,7 +53,7 @@ class FabricService {
         this.wallet = await Wallets.newFileSystemWallet(walletPath);
     }
 
-    generateConnectionProfile() {
+    generateConnectionProfile(mspId) {
         const isContainer = fs.existsSync('/app/organizations');
         const basePath = isContainer ? '/app' : '/root/ship-certify-hl';
         const peerHostname = isContainer ? 'peer0.authority.bki.com' : 'localhost';
@@ -61,10 +61,10 @@ class FabricService {
         const ordererHostname = isContainer ? 'orderer.bki.com' : 'localhost';
         
         return {
-            name: "bki-network-authority",
+            name: "bki-network-dynamic",
             version: "1.0.0",
             client: {
-                organization: "AuthorityMSP",
+                organization: mspId,
                 connection: { timeout: { peer: { endorser: "300" }, orderer: "300" } }
             },
             organizations: {
@@ -95,14 +95,19 @@ class FabricService {
 
     async connectToNetwork(userId = 'admin') {
         try {
-            const ccp = this.generateConnectionProfile();
+            const identity = await this.wallet.get(userId);
+            if (!identity) {
+                throw new Error(`Identity not found in wallet: ${userId}`);
+            }
+            const userMspId = identity.mspId;
+
+            const ccp = this.generateConnectionProfile(userMspId);
             this.gateway = new Gateway();
-            const isContainer = fs.existsSync('/app/organizations');
             
             await this.gateway.connect(ccp, {
                 wallet: this.wallet,
                 identity: userId,
-                discovery: { enabled: true, asLocalhost: !isContainer },
+                discovery: { enabled: false },
                 eventHandlerOptions: { strategy: null },
                 queryHandlerOptions: { timeout: 45 }
             });
@@ -220,7 +225,7 @@ app.get('/api/vessels', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/vessels/my', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
-    const result = await req.fabricService.evaluateTransaction('queryMyVessels');
+    const result = await req.fabricService.evaluateTransaction('queryMyVessels', req.user.shipOwnerId);
     res.json({ success: true, data: result });
 }));
 
@@ -236,7 +241,7 @@ app.get('/api/surveys', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/surveys/my', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
-    const result = await req.fabricService.evaluateTransaction('queryMySurveys');
+    const result = await req.fabricService.evaluateTransaction('queryMySurveys', req.user.shipOwnerId);
     res.json({ success: true, data: result });
 }));
 
@@ -262,7 +267,7 @@ app.get('/api/findings', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/findings/my/open', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
-    const result = await req.fabricService.evaluateTransaction('queryMyOpenFindings');
+    const result = await req.fabricService.evaluateTransaction('queryMyOpenFindings', req.user.shipOwnerId);
     res.json({ success: true, data: result });
 }));
 
@@ -278,7 +283,7 @@ app.get('/api/certificates', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/certificates/my', requireRole('shipowner'), connectAsUser, asyncHandler(async (req, res) => {
-    const result = await req.fabricService.evaluateTransaction('queryMyCertificates');
+    const result = await req.fabricService.evaluateTransaction('queryMyCertificates', req.user.shipOwnerId);
     res.json({ success: true, data: result });
 }));
 
@@ -300,7 +305,7 @@ app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'frontend', 'dist',
 (async () => {
     try {
         await globalFabricService.initializeWallet();
-        await globalFabricService.connectToNetwork('admin');
+        await globalFabricService.connectToNetwork('authority');
         app.listen(PORT, HOST, () => console.log(`🚀 Server running on ${HOST}:${PORT}`));
     } catch (error) {
         console.error('Failed to start server:', error);

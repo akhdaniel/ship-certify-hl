@@ -36,7 +36,7 @@ echo "Packaging chaincode..."
 peer lifecycle chaincode package ${CHAINCODE_NAME}.tar.gz \
     --path ${CHAINCODE_PATH} \
     --lang ${CHAINCODE_LANGUAGE} \
-    --label ${CHAINCODE_NAME}_${CHAINCODE_VERSION}
+    --label ${CHAINCODE_NAME}-${CHAINCODE_VERSION}
 
 if [ $? -ne 0 ]; then
     echo "Failed to package chaincode"
@@ -48,30 +48,19 @@ echo "✅ Chaincode packaged successfully"
 # Install chaincode on Authority peer
 echo "Installing chaincode on Authority peer..."
 setGlobalsForPeer0Authority
-peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz
-
-if [ $? -ne 0 ]; then
-    echo "Failed to install chaincode on Authority peer"
-    exit 1
-fi
+peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz || true
 
 # Install chaincode on ShipOwner peer
 echo "Installing chaincode on ShipOwner peer..."
 setGlobalsForPeer0ShipOwner
-peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz
-
-if [ $? -ne 0 ]; then
-    echo "Failed to install chaincode on ShipOwner peer"
-    exit 1
-fi
+peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz || true
 
 echo "✅ Chaincode installed on both peers"
 
 # Query package ID
 echo "Querying chaincode package ID..."
 setGlobalsForPeer0Authority
-peer lifecycle chaincode queryinstalled >&log.txt
-PACKAGE_ID=$(sed -n "/${CHAINCODE_NAME}_${CHAINCODE_VERSION}/{s/^Package ID: //; s/, Label:.*$//; p;}" log.txt)
+PACKAGE_ID=$(peer lifecycle chaincode queryinstalled | grep -o "Package ID: ${CHAINCODE_NAME}-${CHAINCODE_VERSION}:[a-f0-9]*" | cut -d ' ' -f 3)
 echo "Package ID: $PACKAGE_ID"
 
 # Approve chaincode for Authority
@@ -120,7 +109,8 @@ peer lifecycle chaincode checkcommitreadiness \
     --name ${CHAINCODE_NAME} \
     --version ${CHAINCODE_VERSION} \
     --sequence ${CHAINCODE_SEQUENCE} \
-    --output json
+    --output json \
+    --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')"
 
 # Commit chaincode
 echo "Committing chaincode..."
@@ -136,6 +126,7 @@ peer lifecycle chaincode commit -o localhost:7050 \
     --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/shipowner.bki.com/peers/peer0.shipowner.bki.com/tls/ca.crt" \
     --version ${CHAINCODE_VERSION} \
     --sequence ${CHAINCODE_SEQUENCE} \
+    --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')" \
     --signature-policy "OR('AuthorityMSP.member', 'ShipOwnerMSP.member')"
 
 if [ $? -ne 0 ]; then

@@ -18,10 +18,15 @@
     "start:dev": "concurrently \"npm run api:start\" \"npm run frontend:start\"",
     "deploy": "./deploy.sh"
   },
-  "keywords": ["blockchain", "hyperledger-fabric", "ship-certification", "bki"],
+  "keywords": [
+    "blockchain",
+    "hyperledger-fabric",
+    "ship-certification",
+    "bki"
+  ],
   "author": "BKI Development Team",
   "license": "UNLICENSED",
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.2"
   }
 }

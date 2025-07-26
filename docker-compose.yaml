@@ -144,9 +144,6 @@ services:
       - ./organizations:/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations
       - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
       - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
-    depends_on:
-      - peer0.authority.bki.com
-      - peer0.shipowner.bki.com
     networks:
       - bki
 
@@ -156,6 +153,7 @@ services:
     build:
       context: ./api-server
       dockerfile: Dockerfile
+    image: ship-certify-api-server:latest
     ports:
       - "3000:3000"
     environment:
@@ -163,15 +161,12 @@ services:
       - HOST=0.0.0.0
       - PORT=3000
       - DEBUG=fabric*   # <--- add this line
-    command: /bin/bash -c "node enrollUsers.js && node server.js"
+    command: /bin/bash -c "node enrollUsers.js && sleep 2 && node server.js"
     volumes:
       - ./organizations:/app/organizations
       - ./frontend/dist:/app/frontend/dist
-      - ./api-server/users.json:/app/users.json  # Add this line      
-    depends_on:
-      - peer0.authority.bki.com
-      - peer0.shipowner.bki.com
-      - orderer.bki.com
+      - ./api-server/users.json:/app/users.json
+      - ./api-server/wallet:/app/wallet      
     networks:
       - bki
 

@@ -42,9 +42,12 @@ async function main() {
                 continue;
             }
 
-            if (user.role === 'shipowner') {
-                const userCertPath = path.resolve(basePath, `organizations/peerOrganizations/shipowner.bki.com/users/${user.id}/msp/signcerts/${user.id}-cert.pem`);
-                const userKeyPath = path.resolve(basePath, `organizations/peerOrganizations/shipowner.bki.com/users/${user.id}/msp/keystore`);
+            if (user.role === 'shipowner' || user.role === 'authority') {
+                const org = user.role === 'authority' ? 'authority.bki.com' : 'shipowner.bki.com';
+                const msp = user.role === 'authority' ? 'AuthorityMSP' : 'ShipOwnerMSP';
+
+                const userCertPath = path.resolve(basePath, `organizations/peerOrganizations/${org}/users/${user.id}/msp/signcerts/${user.id}-cert.pem`);
+                const userKeyPath = path.resolve(basePath, `organizations/peerOrganizations/${org}/users/${user.id}/msp/keystore`);
                 
                 if (!fs.existsSync(userCertPath) || !fs.existsSync(userKeyPath)) {
                     console.warn(`[WARN] Crypto materials not found for user ${userId}. Skipping enrollment.`);
@@ -56,11 +59,11 @@ async function main() {
 
                 const userX509Identity = {
                     credentials: { certificate: userCert, privateKey: userKey },
-                    mspId: 'ShipOwnerMSP',
+                    mspId: msp,
                     type: 'X.509',
                 };
                 await wallet.put(userId, userX509Identity);
-                console.log(`Successfully enrolled user "${userId}" and imported it into the wallet`);
+                console.log(`Successfully enrolled user "${userId}" (${user.role}) and imported it into the wallet`);
             }
         }
 

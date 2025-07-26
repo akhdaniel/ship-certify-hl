@@ -13,7 +13,7 @@
     "email": "shipowner@bki.com",
     "name": "PT Kapal Makmur",
     "role": "shipowner",
-    "shipOwnerId": "User1@shipowner.bki.com",
+    "shipOwnerId": "SHO001",
     "passwordHash": "$2b$10$uKC0jggnb4pU2JpiiD0Qh.TmqyiDhRrqpV027pf63zUZV5T5nDYUy"
   }
 ] 
