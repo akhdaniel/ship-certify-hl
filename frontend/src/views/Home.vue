@@ -318,30 +318,42 @@ const roleDescription = computed(() => {
 
 const loadStatistics = async () => {
   try {
-    loading.value = true
-    
-    // Public stats
-    const [vessels, certificates, surveys, openFindings, shipOwners] = await Promise.all([
+    loading.value = true;
+
+    // Fetch all data required for all roles in parallel
+    const promises = [
       vesselApi.getAll().catch(() => ({ data: [] })),
       certificateApi.getAll().catch(() => ({ data: [] })),
       surveyApi.getAll().catch(() => ({ data: [] })),
-      findingApi.getAllOpen().catch(() => ({ data: [] })),
-      shipOwnerApi.getAll().catch(() => ({ data: [] }))
-    ]);
+      shipOwnerApi.getAll().catch(() => ({ data: [] })),
+      findingApi.getAll().catch(() => ({ data: [] })), // Fetch all findings
+    ];
 
+    if (userStore.isShipOwner()) {
+      promises.push(vesselApi.getMy().catch(() => ({ data: [] })));
+      promises.push(findingApi.getMyOpen().catch(() => ({ data: [] })));
+    }
+
+    const [
+      vessels,
+      certificates,
+      surveys,
+      shipOwners,
+      allFindings,
+      myVessels,
+      myOpenFindings,
+    ] = await Promise.all(promises);
+
+    // Process Authority and Public stats
     statistics.value.totalVessels = vessels.data?.length || 0;
     statistics.value.activeCertificates = certificates.data?.filter(cert => cert.Record?.status === 'active').length || 0;
     statistics.value.activeSurveys = surveys.data?.filter(survey => survey.Record?.status === 'in-progress').length || 0;
-    statistics.value.openFindings = openFindings.data?.length || 0;
-    statistics.value.issuedCertificates = statistics.value.activeCertificates;
     statistics.value.totalShipOwners = shipOwners.data?.length || 0;
+    statistics.value.openFindings = allFindings.data?.length || 0; // Correctly count all findings
+    statistics.value.issuedCertificates = statistics.value.activeCertificates;
 
-    // Role-specific stats
+    // Process ShipOwner specific stats
     if (userStore.isShipOwner()) {
-      const [myVessels, myOpenFindings] = await Promise.all([
-        vesselApi.getMy().catch(() => ({ data: [] })),
-        findingApi.getMyOpen().catch(() => ({ data: [] }))
-      ]);
       statistics.value.myVessels = myVessels.data?.length || 0;
       statistics.value.pendingFindings = myOpenFindings.data?.length || 0;
     }

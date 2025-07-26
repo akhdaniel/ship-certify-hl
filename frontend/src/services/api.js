@@ -50,6 +50,7 @@ export const surveyApi = {
 }
 
 export const findingApi = {
+  getAll: () => api.get('/findings'),
   getAllOpen: () => api.get('/findings/open'),
   getBySurvey: (surveyId) => api.get(`/surveys/${surveyId}/findings`),
   create: (surveyId, data) => api.post(`/surveys/${surveyId}/findings`, data),

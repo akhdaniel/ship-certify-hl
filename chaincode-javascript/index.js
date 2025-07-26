@@ -534,6 +534,21 @@ class ShipCertifyContract extends Contract {
         }
         return JSON.stringify(myOpenFindings);
     }
+
+    async queryAllFindings(ctx) {
+        const allSurveysString = await this.queryAllSurveys(ctx);
+        const allSurveys = JSON.parse(allSurveysString);
+        
+        const allFindings = [];
+        for (const surveyObj of allSurveys) {
+            if (surveyObj.Record && surveyObj.Record.findings) {
+                for (const finding of surveyObj.Record.findings) {
+                    allFindings.push({ ...finding, surveyId: surveyObj.Key, vesselId: surveyObj.Record.vesselId });
+                }
+            }
+        }
+        return JSON.stringify(allFindings);
+    }
 }
 
 module.exports = ShipCertifyContract;
