@@ -159,6 +159,7 @@ const selectedFindingId = ref('')
 const formRef = ref(null)
 const resolveFormRef = ref(null)
 const verifyFormRef = ref(null)
+const updatingFindingId = ref(null)
 
 const newFinding = ref({
   findingId: '',
@@ -266,6 +267,8 @@ const columns = computed(() => [
             {
               size: 'small',
               type: 'warning',
+              loading: updatingFindingId.value === row.id,
+              disabled: updatingFindingId.value !== null,
               onClick: () => openResolveModal(row.id),
               style: { marginRight: '8px' }
             },
@@ -281,6 +284,8 @@ const columns = computed(() => [
             {
               size: 'small',
               type: 'primary',
+              loading: updatingFindingId.value === row.id,
+              disabled: updatingFindingId.value !== null,
               onClick: () => openVerifyModal(row.id)
             },
             { default: () => 'Verifikasi' }
@@ -386,37 +391,34 @@ const openResolveModal = (findingId) => {
 }
 
 const handleResolveFinding = async () => {
+  updatingFindingId.value = selectedFindingId.value;
   try {
-    await resolveFormRef.value?.validate()
-    submitting.value = true
+    await resolveFormRef.value?.validate();
+    submitting.value = true;
     
-    console.log('Resolving finding:', selectedFindingId.value)
-    await findingApi.resolve(selectedSurveyId.value, selectedFindingId.value, resolutionData.value)
+    await findingApi.resolve(selectedSurveyId.value, selectedFindingId.value, resolutionData.value);
     
-    message.success('Finding berhasil diselesaikan')
-    showResolveModal.value = false
-    resetResolveForm()
+    message.success('Perintah menyelesaikan finding berhasil dikirim');
+    showResolveModal.value = false;
+    resetResolveForm();
     
-    // Show loading state and wait for blockchain processing
-    console.log('Waiting for blockchain to process...')
-    loadingFindings.value = true
-    message.loading('Memperbarui data...', { duration: 0, key: 'refresh' })
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Wait for blockchain processing with user feedback
+    message.loading('Menunggu konfirmasi jaringan blockchain...', { duration: 5000, key: 'network-wait' });
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5-second delay
     
-    console.log('Refreshing findings list...')
-    await loadFindings()
-    
-    // Clear loading messages
-    message.destroyAll()
-    loadingFindings.value = false
-    console.log('Findings list refreshed')
+    message.success('Jaringan telah terkonfirmasi, memuat ulang data...');
+    await loadFindings();
+    message.success('Data berhasil dimuat ulang');
+
   } catch (error) {
-    console.error('Error resolving finding:', error)
-    message.error('Gagal menyelesaikan finding: ' + error.message)
+    console.error('Error resolving finding:', error);
+    message.error('Gagal menyelesaikan finding: ' + error.message);
   } finally {
-    submitting.value = false
+    submitting.value = false;
+    updatingFindingId.value = null;
+    message.destroyAll();
   }
-}
+};
 
 const openVerifyModal = (findingId) => {
   selectedFindingId.value = findingId
@@ -424,36 +426,33 @@ const openVerifyModal = (findingId) => {
 }
 
 const handleVerifyFinding = async () => {
+  updatingFindingId.value = selectedFindingId.value;
   try {
-    submitting.value = true
+    submitting.value = true;
     
-    console.log('Verifying finding:', selectedFindingId.value)
-    await findingApi.verify(selectedSurveyId.value, selectedFindingId.value, verificationData.value)
+    await findingApi.verify(selectedSurveyId.value, selectedFindingId.value, verificationData.value);
     
-    message.success('Finding berhasil diverifikasi')
-    showVerifyModal.value = false
-    resetVerifyForm()
+    message.success('Perintah verifikasi finding berhasil dikirim');
+    showVerifyModal.value = false;
+    resetVerifyForm();
     
-    // Show loading state and wait for blockchain processing
-    console.log('Waiting for blockchain to process...')
-    loadingFindings.value = true
-    message.loading('Memperbarui data...', { duration: 0, key: 'refresh' })
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Wait for blockchain processing with user feedback
+    message.loading('Menunggu konfirmasi jaringan blockchain...', { duration: 5000, key: 'network-wait' });
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5-second delay
     
-    console.log('Refreshing findings list...')
-    await loadFindings()
-    
-    // Clear loading messages
-    message.destroyAll()
-    loadingFindings.value = false
-    console.log('Findings list refreshed')
+    message.success('Jaringan telah terkonfirmasi, memuat ulang data...');
+    await loadFindings();
+    message.success('Data berhasil dimuat ulang');
+
   } catch (error) {
-    console.error('Error verifying finding:', error)
-    message.error('Gagal memverifikasi finding: ' + error.message)
+    console.error('Error verifying finding:', error);
+    message.error('Gagal memverifikasi finding: ' + error.message);
   } finally {
-    submitting.value = false
+    submitting.value = false;
+    updatingFindingId.value = null;
+    message.destroyAll();
   }
-}
+};
 
 const resetAddForm = () => {
   newFinding.value = {

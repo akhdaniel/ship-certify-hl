@@ -109,6 +109,7 @@ const searchQuery = ref('')
 const surveys = ref([])
 const vessels = ref([])
 const formRef = ref(null)
+const updatingSurveyId = ref(null)
 
 const newSurvey = ref({
   surveyId: '',
@@ -212,6 +213,8 @@ const columns = computed(() => [
           {
             size: 'small',
             type: 'primary',
+            loading: updatingSurveyId.value === row.id,
+            disabled: updatingSurveyId.value !== null,
             onClick: () => startSurvey(row.id)
           },
           { default: () => 'Mulai' }
@@ -324,29 +327,27 @@ const handleAddSurvey = async () => {
 }
 
 const startSurvey = async (surveyId) => {
+  updatingSurveyId.value = surveyId;
   try {
-    console.log('Starting survey:', surveyId)
-    await surveyApi.start(surveyId)
-    message.success('Survey berhasil dimulai')
+    await surveyApi.start(surveyId);
+    message.success('Perintah memulai survey berhasil dikirim');
     
-    // Show loading state and wait for blockchain processing
-    console.log('Waiting for blockchain to process...')
-    loading.value = true
-    message.loading('Memperbarui data...', { duration: 0, key: 'refresh' })
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Wait for blockchain processing with user feedback
+    message.loading('Menunggu konfirmasi jaringan blockchain...', { duration: 5000, key: 'network-wait' });
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5-second delay
     
-    console.log('Refreshing surveys list...')
-    await loadSurveys()
-    
-    // Clear loading messages
-    message.destroyAll()
-    loading.value = false
-    console.log('Surveys list refreshed')
+    message.success('Jaringan telah terkonfirmasi, memuat ulang data...');
+    await loadSurveys();
+    message.success('Data berhasil dimuat ulang');
+
   } catch (error) {
-    console.error('Error starting survey:', error)
-    message.error('Gagal memulai survey: ' + error.message)
+    console.error('Error starting survey:', error);
+    message.error('Gagal memulai survey: ' + error.message);
+  } finally {
+    updatingSurveyId.value = null;
+    message.destroyAll();
   }
-}
+};
 
 const resetForm = () => {
   newSurvey.value = {
